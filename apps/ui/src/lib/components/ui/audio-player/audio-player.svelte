@@ -19,10 +19,18 @@
     audioProps?: Omit<HTMLAudioAttributes, "src">;
   }
 
-  let { class: className, children, src, data, audioProps, style, ...restProps }: Props = $props();
+  let {
+    class: className,
+    children,
+    src,
+    data,
+    audioProps,
+    style,
+    ...restProps
+  }: Props = $props();
 
   let resolvedSrc = $derived(
-    src ?? (data ? `data:${data.mediaType};base64,${data.base64}` : undefined)
+    src ?? (data ? `data:${data.mediaType};base64,${data.base64}` : undefined),
   );
 </script>
 
@@ -33,7 +41,7 @@
   style="
     --media-button-icon-width: 1rem;
     --media-button-icon-height: 1rem;
-    --media-icon-color: currentColor;
+    --media-icon-color: var(--foreground);
     --media-font: var(--font-sans);
     --media-font-size: 10px;
     --media-control-background: transparent;
@@ -55,6 +63,11 @@
   "
   {...restProps}
 >
-  <audio slot="media" src={resolvedSrc} data-slot="audio-player-element" {...audioProps}></audio>
+  <audio
+    slot="media"
+    src={resolvedSrc}
+    data-slot="audio-player-element"
+    {...audioProps}
+  ></audio>
   {@render children?.()}
 </media-controller>

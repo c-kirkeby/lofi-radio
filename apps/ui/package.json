@@ -12,7 +12,8 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "dependencies": {
-    "media-chrome": "catalog:"
+    "media-chrome": "catalog:",
+    "mode-watcher": "catalog:"
   },
   "devDependencies": {
     "@fontsource-variable/inter": "catalog:",
