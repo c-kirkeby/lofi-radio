@@ -11,6 +11,7 @@ catalog:
   bits-ui: ^2.17.3
   clsx: ^2.1.1
   lucide: ^1.8.0
+  media-chrome: ^4.19.0
   shadcn-svelte: ^1.2.7
   tailwind-merge: ^3.5.0
   tailwind-variants: ^3.2.2

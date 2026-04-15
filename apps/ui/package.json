@@ -11,6 +11,9 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
+  "dependencies": {
+    "media-chrome": "catalog:"
+  },
   "devDependencies": {
     "@fontsource-variable/inter": "catalog:",
     "@internationalized/date": "catalog:",
