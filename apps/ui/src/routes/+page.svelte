@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Player from "$lib/components/player.svelte";
   import ShowGrid from "$lib/components/show-grid.svelte";
   import { OPMLParser } from "$lib/opml";
   import type { OPMLFeed } from "$lib/opml";
@@ -9,7 +8,6 @@
 
   let shows = $state<OPMLFeed[]>([]);
   let loading = $state(true);
-  let selected = $state<OPMLFeed | null>(null);
 
   onMount(async () => {
     try {
@@ -42,11 +40,3 @@
   <ShowGrid {shows} {loading} />
 </div>
 
-{#if selected}
-  <Player
-    src={selected.xmlUrl}
-    title={selected.text}
-    show={selected.text}
-    image=""
-  />
-{/if}

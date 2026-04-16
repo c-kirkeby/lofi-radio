@@ -32,6 +32,13 @@ export const getFeed = query("unchecked", async (xmlUrl: string): Promise<FeedRe
 
         return image ? { image } : {};
       },
+      getExtraEntryFields(entryData: object) {
+        // Get the episode enclosure
+        const ed = entryData as Record<string, unknown>;
+        const enclosure = ed["enclosure"] as Record<string, unknown> | undefined;
+
+        return enclosure ? { enclosure } : {};
+      },
     });
 
     return data as FeedResult;

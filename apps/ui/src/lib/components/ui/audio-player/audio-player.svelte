@@ -2,42 +2,31 @@
   import "media-chrome";
   import { cn } from "$lib/utils.js";
   import type { Snippet } from "svelte";
-  import type { HTMLAttributes, HTMLAudioAttributes } from "svelte/elements";
-
-  type SpeechAudioData = {
-    base64: string;
-    mediaType: string;
-  };
+  import type { HTMLAttributes } from "svelte/elements";
 
   interface Props extends HTMLAttributes<HTMLElement> {
     children?: Snippet;
-    /** URL src for the audio element */
-    src?: string;
-    /** AI SDK SpeechResult data (base64 + mediaType) as an alternative to src */
-    data?: SpeechAudioData;
-    /** Additional attributes forwarded to the underlying <audio> element */
-    audioProps?: Omit<HTMLAudioAttributes, "src">;
+    /** Bindable ref to the underlying <audio> element. */
+    audio?: HTMLAudioElement | null;
+    /** Bindable ref to the <media-controller> element. */
+    mediaController?: HTMLElement | null;
   }
 
   let {
     class: className,
     children,
-    src,
-    data,
-    audioProps,
+    audio = $bindable(null),
+    mediaController = $bindable(null),
     style,
     ...restProps
   }: Props = $props();
-
-  let resolvedSrc = $derived(
-    src ?? (data ? `data:${data.mediaType};base64,${data.base64}` : undefined),
-  );
 </script>
 
 <media-controller
   audio
   data-slot="audio-player"
   class={cn("w-full", className)}
+  bind:this={mediaController}
   style="
     --media-button-icon-width: 1rem;
     --media-button-icon-height: 1rem;
@@ -65,9 +54,10 @@
 >
   <audio
     slot="media"
-    src={resolvedSrc}
+    preload="metadata"
+    crossorigin="anonymous"
     data-slot="audio-player-element"
-    {...audioProps}
+    bind:this={audio}
   ></audio>
   {@render children?.()}
 </media-controller>
