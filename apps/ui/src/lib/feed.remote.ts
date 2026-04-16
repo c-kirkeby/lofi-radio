@@ -1,9 +1,21 @@
 import { query } from "$app/server";
 import { extract } from "@extractus/feed-extractor";
-import type { FeedData } from "@extractus/feed-extractor";
+import type { FeedData, FeedEntry } from "@extractus/feed-extractor";
 
 export interface FeedResult extends FeedData {
   image?: string;
+}
+
+/** Extended entry type with fields extracted via getExtraEntryFields */
+export interface FeedEntryExtended extends FeedEntry {
+  /** Raw enclosure object from the RSS feed (fast-xml-parser attribute format) */
+  enclosure?: { "@_url"?: string; url?: string; "@_type"?: string; "@_length"?: string };
+  /**
+   * Episode duration. When freshly fetched, a raw itunes:duration string
+   * ("H:MM:SS", "MM:SS", or total-seconds string). When loaded from cache,
+   * feed-extractor may have normalised this to a number (total seconds).
+   */
+  duration?: string | number;
 }
 
 /**
@@ -33,11 +45,14 @@ export const getFeed = query("unchecked", async (xmlUrl: string): Promise<FeedRe
         return image ? { image } : {};
       },
       getExtraEntryFields(entryData: object) {
-        // Get the episode enclosure
         const ed = entryData as Record<string, unknown>;
         const enclosure = ed["enclosure"] as Record<string, unknown> | undefined;
+        const itunesDuration = ed["itunes:duration"] as string | undefined;
 
-        return enclosure ? { enclosure } : {};
+        return {
+          ...(enclosure ? { enclosure } : {}),
+          ...(itunesDuration ? { duration: itunesDuration } : {}),
+        };
       },
     });
 
