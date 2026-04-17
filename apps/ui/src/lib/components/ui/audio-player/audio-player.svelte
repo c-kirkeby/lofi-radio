@@ -55,7 +55,6 @@
   <audio
     slot="media"
     preload="metadata"
-    crossorigin="anonymous"
     data-slot="audio-player-element"
     bind:this={audio}
   ></audio>
