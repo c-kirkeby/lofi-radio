@@ -16,7 +16,9 @@
   } = $props();
 </script>
 
-<div class="grid grid-cols-8 gap-4">
+<div
+  class="grid xl:grid-cols-8 lg:grid-cols-7 md:grid-cols-5 grid-cols-3 gap-4"
+>
   {#if loading}
     {#each { length: skeletonCount } as _, i (i)}
       <Card.Root class="py-0 overflow-hidden">
