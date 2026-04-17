@@ -34,6 +34,16 @@ export class Player {
     }
   }
 
+  playpause() {
+    if (!this.audio) return;
+
+    if (this.audio.paused) {
+      void this.audio.play();
+    } else {
+      this.audio.pause();
+    }
+  }
+
   /** Pause playback and hide the player bar. */
   close() {
     this.audio?.pause();
