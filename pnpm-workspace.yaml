@@ -8,9 +8,11 @@ catalog:
   "@fontsource-variable/inter": ^5.2.8
   "@internationalized/date": ^3.12.1
   "@lucide/svelte": ^1.8.0
+  "@types/dompurify": ^3.2.0
   "@types/node": ^24
   bits-ui: ^2.17.3
   clsx: ^2.1.1
+  dompurify: ^3.4.0
   lucide: ^1.8.0
   media-chrome: ^4.19.0
   mode-watcher: ^1.1.0

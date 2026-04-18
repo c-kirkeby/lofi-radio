@@ -4,6 +4,9 @@ import type { FeedData, FeedEntry } from "@extractus/feed-extractor";
 
 export interface FeedResult extends FeedData {
   image?: string;
+  itunesAuthor?: string;
+  itunesSummary?: string;
+  itunesCategories?: string[];
 }
 
 /** Extended entry type with fields extracted via getExtraEntryFields */
@@ -42,7 +45,29 @@ export const getFeed = query("unchecked", async (xmlUrl: string): Promise<FeedRe
           (rssImage?.["url"] as string | undefined) ??
           undefined;
 
-        return image ? { image } : {};
+        const itunesAuthor = fd["itunes:author"] as string | undefined;
+        const itunesSummary = fd["itunes:summary"] as string | undefined;
+
+        // itunes:category may appear once (object) or multiple times (array)
+        const rawCats = fd["itunes:category"];
+        let itunesCategories: string[] = [];
+        if (rawCats) {
+          const cats = Array.isArray(rawCats) ? rawCats : [rawCats];
+          itunesCategories = [
+            ...new Set(
+              cats
+                .map((c) => (c as Record<string, unknown>)?.["@_text"] as string | undefined)
+                .filter((t): t is string => !!t),
+            ),
+          ];
+        }
+
+        return {
+          ...(image ? { image } : {}),
+          ...(itunesAuthor ? { itunesAuthor } : {}),
+          ...(itunesSummary ? { itunesSummary } : {}),
+          ...(itunesCategories.length ? { itunesCategories } : {}),
+        };
       },
       getExtraEntryFields(entryData: object) {
         const ed = entryData as Record<string, unknown>;

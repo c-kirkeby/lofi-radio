@@ -15,12 +15,18 @@ catalogs:
     '@internationalized/date':
       specifier: ^3.12.1
       version: 3.12.1
+    '@types/dompurify':
+      specifier: ^3.2.0
+      version: 3.2.0
     bits-ui:
       specifier: ^2.17.3
       version: 2.17.3
     clsx:
       specifier: ^2.1.1
       version: 2.1.1
+    dompurify:
+      specifier: ^3.4.0
+      version: 3.4.0
     media-chrome:
       specifier: ^4.19.0
       version: 4.19.0
@@ -60,6 +66,9 @@ importers:
       '@extractus/feed-extractor':
         specifier: 'catalog:'
         version: 7.1.7
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.0
       media-chrome:
         specifier: 'catalog:'
         version: 4.19.0(react@19.2.5)
@@ -88,6 +97,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.2.2
         version: 4.2.2(@voidzero-dev/vite-plus-core@0.1.16(@types/node@25.6.0)(jiti@2.6.1)(typescript@6.0.2)(yaml@2.8.3))
+      '@types/dompurify':
+        specifier: 'catalog:'
+        version: 3.2.0
       bits-ui:
         specifier: 'catalog:'
         version: 2.17.3(@internationalized/date@3.12.1)(@sveltejs/kit@2.57.1(@sveltejs/vite-plugin-svelte@7.0.0(@voidzero-dev/vite-plus-core@0.1.16(@types/node@25.6.0)(jiti@2.6.1)(typescript@6.0.2)(yaml@2.8.3))(svelte@5.55.4))(@voidzero-dev/vite-plus-core@0.1.16(@types/node@25.6.0)(jiti@2.6.1)(typescript@6.0.2)(yaml@2.8.3))(svelte@5.55.4)(typescript@6.0.2))(svelte@5.55.4)
@@ -751,6 +763,10 @@ packages:
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
+  '@types/dompurify@3.2.0':
+    resolution: {integrity: sha512-Fgg31wv9QbLDA0SpTOXO3MaxySc4DKGLi8sna4/Utjo4r3ZRPdCt4UQee8BWr+Q5z21yifghREPJGYaEOEIACg==}
+    deprecated: This is a stub types definition. dompurify provides its own type definitions, so you do not need this installed.
+
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
@@ -1013,6 +1029,9 @@ packages:
 
   devalue@5.7.1:
     resolution: {integrity: sha512-MUbZ586EgQqdRnC4yDrlod3BEdyvE4TapGYHMW2CiaW+KkkFmWEFqBUaLltEZCGi0iFXCEjRF0OjF0DV2QHjOA==}
+
+  dompurify@3.4.0:
+    resolution: {integrity: sha512-nolgK9JcaUXMSmW+j1yaSvaEaoXYHwWyGJlkoCTghc97KgGDDSnpoU/PlEnw63Ah+TGKFOyY+X5LnxaWbCSfXg==}
 
   enhanced-resolve@5.20.1:
     resolution: {integrity: sha512-Qohcme7V1inbAfvjItgw0EaxVX5q2rdVEZHRBrEQdRZTssLDGsL8Lwrznl8oQ/6kuTJONLaDcGjkNP247XEhcA==}
@@ -1880,6 +1899,10 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
+  '@types/dompurify@3.2.0':
+    dependencies:
+      dompurify: 3.4.0
+
   '@types/estree@1.0.8': {}
 
   '@types/node@25.6.0':
@@ -2061,6 +2084,10 @@ snapshots:
   detect-libc@2.1.2: {}
 
   devalue@5.7.1: {}
+
+  dompurify@3.4.0:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
 
   enhanced-resolve@5.20.1:
     dependencies:
