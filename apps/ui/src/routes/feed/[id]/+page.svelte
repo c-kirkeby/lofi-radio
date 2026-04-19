@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { page } from "$app/state";
   import { getCachedShows } from "$lib/db/shows";
   import { fetchFeed, parseDuration } from "$lib/feeds";
-  import type { CachedFeed, FeedEntryExtended } from "$lib/feeds";
+  import { sanitiseDescription } from "$lib/feed/parser";
+  import type { Entry } from "$lib/feed/parser";
   import { player } from "$lib/state/player.svelte";
   import { Skeleton } from "@/components/ui/skeleton";
   import { Button } from "@/components/ui/button";
@@ -17,105 +17,32 @@
     ItemActions,
   } from "@/components/ui/item";
   import { Play, Mic, Link } from "@lucide/svelte";
-  import DOMPurify from "dompurify";
   import ItemSeparator from "@/components/ui/item/item-separator.svelte";
-
-  const id = $derived(Number(page.params.id));
-
-  let feed = $state<CachedFeed | null>(null);
-  let feedImage = $state<string | null>(null);
-  let feedTitle = $state<string | null>(null);
-  let feedAuthor = $state<string | null>(null);
-  let feedDescription = $state<string | null>(null);
-  let feedDescriptionHtml = $state<string | null>(null);
-  let feedLink = $state<string | null>(null);
-  let feedCategories = $state<string[]>([]);
-  let descriptionExpanded = $state(false);
-  let loading = $state(true);
-  let error = $state<string | null>(null);
 
   const DESCRIPTION_LIMIT = 200;
 
-  const descriptionTruncated = $derived(
-    !!feedDescription && feedDescription.length > DESCRIPTION_LIMIT,
+  const id = $derived(Number(page.params.id));
+
+  const shows = await getCachedShows();
+  const show = $derived(shows.find((s) => s.id === id));
+  const feed = $derived(show ? await fetchFeed(show.id, show.xmlUrl) : null);
+
+  const sanitised = $derived(
+    feed?.description ? sanitiseDescription(feed.description) : null,
   );
+  const descriptionTruncated = $derived(
+    !!sanitised?.text && sanitised.text.length > DESCRIPTION_LIMIT,
+  );
+  let descriptionExpanded = $state(false);
 
-  function sanitizeDescription(raw: string): { html: string; text: string } {
-    const html = DOMPurify.sanitize(raw, {
-      ALLOWED_TAGS: ["p", "a"],
-      ALLOWED_ATTR: ["href"],
-    });
+  function playEpisode(entry: Entry) {
+    if (!entry.url) return;
 
-    const tmp = document.createElement("template");
-    tmp.innerHTML = html;
-    return { html, text: tmp.content.textContent ?? "" };
-  }
-
-  onMount(async () => {
-    try {
-      const shows = await getCachedShows();
-      const show = shows.find((s) => s.id === id);
-
-      if (!show) {
-        error = "Show not found.";
-        return;
-      }
-
-      const data = await fetchFeed(show.id!, show.xmlUrl);
-      if (!data) {
-        error = "Failed to load feed.";
-        return;
-      }
-
-      feed = data;
-      feedImage = (data as CachedFeed & { image?: string }).image ?? null;
-      feedTitle = data.title ?? show.text;
-      feedLink = data.link ?? null;
-
-      const d = data as CachedFeed & {
-        author?: { name?: string; email?: string } | string;
-        itunesAuthor?: string;
-        itunesSummary?: string;
-        itunesCategories?: string[];
-      };
-      feedAuthor =
-        typeof d.author === "string"
-          ? d.author
-          : (d.author?.name ?? d.author?.email ?? d.itunesAuthor ?? null);
-
-      const rawDesc = data.description ?? d.itunesSummary ?? null;
-      const rawDescStr =
-        typeof rawDesc === "string"
-          ? rawDesc
-          : typeof rawDesc === "object" && rawDesc !== null
-            ? (((rawDesc as Record<string, unknown>)["#text"] as
-                | string
-                | undefined) ?? null)
-            : null;
-
-      if (rawDescStr) {
-        const { html, text } = sanitizeDescription(rawDescStr);
-        feedDescriptionHtml = html;
-        feedDescription = text;
-      }
-      feedCategories = d.itunesCategories ?? [];
-    } catch (err) {
-      console.error(err);
-      error = "An unexpected error occurred.";
-    } finally {
-      loading = false;
-    }
-  });
-
-  function playEpisode(entry: FeedEntryExtended) {
-    const enc = entry.enclosure;
-    const src = enc?.["@_url"] ?? enc?.url ?? null;
-    if (!src) return;
     player.load({
-      src,
-      title: entry.title ?? "Unknown episode",
-      show: feedTitle ?? "",
-      image: feedImage,
+      src: entry.url,
+      title: entry.title,
+      show: feed?.title,
+      image: feed?.image,
     });
   }
 
@@ -130,7 +57,7 @@
 </script>
 
 <div class="min-h-screen p-6 pb-24 mx-auto container max-w-8xl">
-  {#if loading}
+  {#if !feed}
     <!-- Header skeleton -->
     <div class="flex gap-8 mb-8">
       <Skeleton class="size-48 rounded-xl shrink-0" />
@@ -155,103 +82,97 @@
         <Skeleton class="h-8 w-16" />
       </div>
     {/each}
-  {:else if error}
-    <p class="text-destructive">{error}</p>
-  {:else if feed}
-    <!-- Feed header -->
-    <div class="flex gap-8 mb-8">
-      {#if feedImage}
-        <img
-          src={feedImage}
-          alt={feedTitle ?? ""}
-          class="size-48 rounded-xl object-cover shrink-0"
-        />
+  {/if}
+
+  <!-- Feed header -->
+  <div class="flex gap-8 mb-8">
+    {#if feed?.image}
+      <img
+        src={feed.image}
+        alt={feed.title}
+        class="size-48 rounded-xl object-cover shrink-0"
+      />
+    {/if}
+    <div class="flex flex-col justify-start pt-1 gap-2 min-w-0">
+      <h1 class="text-2xl font-semibold tracking-tight">{feed?.title}</h1>
+      <div
+        class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground"
+      >
+        {#if feed?.author}
+          <span class="flex items-center gap-1.5">
+            <Mic class="size-3.5 shrink-0" />
+            {feed.author}
+          </span>
+        {/if}
+        {#if feed?.link}
+          <a
+            href={feed.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hover:text-foreground flex items-center gap-1.5 transition-colors min-w-0"
+          >
+            <Link class="size-3.5 shrink-0" />
+            <span class="truncate text-foreground">{feed.link}</span>
+          </a>
+        {/if}
+      </div>
+      {#if sanitised?.html}
+        <div class="text-sm text-muted-foreground">
+          <div
+            class={[
+              "[&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:opacity-80",
+              !descriptionExpanded && descriptionTruncated ? "line-clamp-4" : "",
+            ].join(" ")}
+          >
+            {@html sanitised.html}
+          </div>
+          {#if descriptionTruncated}
+            <button
+              onclick={() => (descriptionExpanded = !descriptionExpanded)}
+              class="mt-1 text-foreground underline-offset-4 hover:underline text-xs font-medium"
+            >
+              {descriptionExpanded ? "Show less" : "Read more"}
+            </button>
+          {/if}
+        </div>
       {/if}
-      <div class="flex flex-col justify-start pt-1 gap-2 min-w-0">
-        <h1 class="text-2xl font-semibold tracking-tight">{feedTitle}</h1>
+      {#if feed?.categories?.length}
         <div class="flex flex-row gap-2">
-          {#each feedCategories as category (category)}
+          {#each feed.categories as category (category)}
             <Badge variant="secondary">{category}</Badge>
           {/each}
         </div>
-        <div
-          class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground"
-        >
-          {#if feedAuthor}
-            <span class="flex items-center gap-1.5">
-              <Mic class="size-3.5 shrink-0" />
-              {feedAuthor}
-            </span>
-          {/if}
-          {#if feedLink}
-            <a
-              href={feedLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="hover:text-foreground flex items-center gap-1.5 transition-colors min-w-0"
-            >
-              <Link class="size-3.5 shrink-0" />
-              <span class="truncate text-foreground">{feedLink}</span>
-            </a>
-          {/if}
-        </div>
-        {#if feedDescriptionHtml}
-          <div class="text-sm text-muted-foreground">
-            <div
-              class={[
-                "[&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:opacity-80",
-                !descriptionExpanded && descriptionTruncated
-                  ? "line-clamp-4"
-                  : "",
-              ].join(" ")}
-            >
-              {@html feedDescriptionHtml}
-            </div>
-            {#if descriptionTruncated}
-              <button
-                onclick={() => (descriptionExpanded = !descriptionExpanded)}
-                class="mt-1 text-foreground underline-offset-4 hover:underline text-xs font-medium"
-              >
-                {descriptionExpanded ? "Show less" : "Read more"}
-              </button>
-            {/if}
-          </div>
-        {/if}
-      </div>
+      {/if}
     </div>
+  </div>
 
-    <!-- Episode list -->
-    <ItemGroup>
-      {#each feed.entries ?? [] as entry, index (entry.id ?? entry.title)}
-        {@const ext = entry as FeedEntryExtended}
-        {@const duration = parseDuration(ext.duration)}
-        {@const encType = ext.enclosure?.["@_type"] ?? ""}
-        {#if encType.startsWith("audio/")}
-          <Item class="py-0">
-            <ItemContent>
-              <ItemTitle>{entry.title ?? "Untitled"}</ItemTitle>
-              <ItemDescription>
-                {formatDate(entry.published)}{#if duration && entry.published}
-                  ·
-                {/if}{duration}
-              </ItemDescription>
-            </ItemContent>
-            <ItemActions>
-              <Button
-                onclick={() => playEpisode(ext)}
-                variant="ghost"
-                size="icon"
-                aria-label="Play {entry.title}"
-              >
-                <Play class="size-4" />
-              </Button>
-            </ItemActions>
-            {#if index !== (feed.entries?.length ?? 0) - 1}
-              <ItemSeparator />
-            {/if}
-          </Item>
+  <!-- Episode list -->
+  <ItemGroup>
+    {#each feed?.entries ?? [] as entry, index (entry.id ?? entry.title)}
+      {@const duration = parseDuration(entry.duration)}
+      <Item class="py-0">
+        <ItemContent>
+          <ItemTitle>{entry.title ?? "Untitled"}</ItemTitle>
+          <ItemDescription>
+            {formatDate(entry.published)}{#if duration && entry.published}
+              ·
+            {/if}{duration}
+          </ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Play {entry.title}"
+            onclick={() => playEpisode(entry)}
+          >
+            <Play class="size-4" />
+          </Button>
+        </ItemActions>
+        {#if index !== (feed?.entries?.length ?? 0) - 1}
+          <ItemSeparator />
         {/if}
-      {/each}
-    </ItemGroup>
-  {/if}
+      </Item>
+    {/each}
+  </ItemGroup>
 </div>

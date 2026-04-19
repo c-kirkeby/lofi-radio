@@ -1,9 +1,5 @@
 import { getFeed } from "$lib/feed.remote";
-import type { FeedResult, FeedEntryExtended } from "$lib/feed.remote";
 import { getCachedFeed, cacheFeed } from "$lib/db/feeds";
-import type { CachedFeed } from "$lib/db/feeds";
-
-export type { CachedFeed, FeedResult, FeedEntryExtended };
 
 /**
  * Parse an itunes:duration value into a human-readable string via Intl.DurationFormat.
@@ -35,14 +31,14 @@ export function parseDuration(raw: string | number | undefined): string | null {
  *
  * Returns null if both the cache and the remote fetch fail.
  */
-export async function fetchFeed(id: number, xmlUrl: string): Promise<CachedFeed | null> {
+export async function fetchFeed(id: number, xmlUrl: string) {
   // 1. Try IndexedDB cache first
   const cached = await getCachedFeed(id);
   if (cached) return cached;
 
   // 2. Fetch via server-side remote function (.run() returns a plain Promise,
   //    safe to call outside a reactive context such as onMount)
-  const data = (await getFeed(xmlUrl).run()) as FeedResult | null;
+  const data = await getFeed(xmlUrl).run();
   if (!data) return null;
 
   await cacheFeed(id, data);

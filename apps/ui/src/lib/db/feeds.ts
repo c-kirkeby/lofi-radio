@@ -1,10 +1,8 @@
-import type { FeedData } from "@extractus/feed-extractor";
 import { openDB, STORES } from "./client";
+import type { Feed } from "@/feed/parser";
 
-/** A cached feed entry — FeedData keyed by the show's numeric id. */
-export interface CachedFeed extends FeedData {
-  id: number;
-}
+/** A cached feed entry — Feed keyed by the show's numeric id. */
+export type CachedFeed = Feed & { id: number };
 
 /** Retrieve a cached feed by the show's numeric id. Returns undefined if not found. */
 export async function getCachedFeed(id: number): Promise<CachedFeed | undefined> {
@@ -19,7 +17,7 @@ export async function getCachedFeed(id: number): Promise<CachedFeed | undefined>
 }
 
 /** Persist a feed result keyed by the show's numeric id. */
-export async function cacheFeed(id: number, data: FeedData): Promise<void> {
+export async function cacheFeed(id: number, data: Feed): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORES.feeds, "readwrite");
