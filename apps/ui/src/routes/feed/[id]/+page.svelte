@@ -36,13 +36,13 @@
   let descriptionExpanded = $state(false);
 
   function playEpisode(entry: Entry) {
-    if (!entry.url) return;
+    if (!entry.url || !feed?.title || !feed.image || !entry.title) return;
 
     player.load({
       src: entry.url,
       title: entry.title,
-      show: feed?.title,
-      image: feed?.image,
+      show: feed.title,
+      image: feed.image,
     });
   }
 
@@ -121,7 +121,9 @@
           <div
             class={[
               "[&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:opacity-80",
-              !descriptionExpanded && descriptionTruncated ? "line-clamp-4" : "",
+              !descriptionExpanded && descriptionTruncated
+                ? "line-clamp-4"
+                : "",
             ].join(" ")}
           >
             {@html sanitised.html}
