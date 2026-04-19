@@ -5,7 +5,8 @@
   import { Skeleton } from "@/components/ui/skeleton";
   import type { OPMLFeed } from "$lib/opml";
   import { fetchFeed } from "$lib/feeds";
-  import type { CachedFeed } from "$lib/feeds";
+  import { resolve } from "$app/paths";
+  import type { CachedFeed } from "@/db/feeds";
 
   let { show }: { show: OPMLFeed } = $props();
 
@@ -27,7 +28,7 @@
   );
 </script>
 
-<a href="/feed/{show.id}" class="block">
+<a href={resolve(`/feed/${show.id}`)} class="block">
   <Card.Root
     class="py-0 overflow-hidden transition-transform duration-200 ease-in-out hover:scale-105"
   >
