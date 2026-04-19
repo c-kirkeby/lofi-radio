@@ -18,6 +18,7 @@
   } from "@/components/ui/item";
   import { Play, Mic, Link } from "@lucide/svelte";
   import ItemSeparator from "@/components/ui/item/item-separator.svelte";
+  import { resolve } from "$app/paths";
 
   const DESCRIPTION_LIMIT = 200;
 
@@ -91,6 +92,7 @@
         src={feed.image}
         alt={feed.title}
         class="size-48 rounded-xl object-cover shrink-0"
+        style:view-transition-name={`podcast-${id}`}
       />
     {/if}
     <div class="flex flex-col justify-start pt-1 gap-2 min-w-0">

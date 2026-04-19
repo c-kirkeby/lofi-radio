@@ -8,7 +8,6 @@ catalog:
   "@fontsource-variable/inter": ^5.2.8
   "@internationalized/date": ^3.12.1
   "@lucide/svelte": ^1.8.0
-  "@types/dompurify": ^3.2.0
   "@types/node": ^24
   bits-ui: ^2.17.3
   clsx: ^2.1.1
@@ -16,6 +15,7 @@ catalog:
   lucide: ^1.8.0
   media-chrome: ^4.19.0
   mode-watcher: ^1.1.0
+  runed: ^0.37.1
   shadcn-svelte: ^1.2.7
   tailwind-merge: ^3.5.0
   tailwind-variants: ^3.2.2

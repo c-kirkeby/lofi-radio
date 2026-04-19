@@ -37,12 +37,18 @@
         {#if loading}
           <Skeleton class="size-full rounded-none" />
         {:else if image}
-          <img src={image} alt={title} class="size-full object-cover" />
+          <img
+            src={image}
+            alt={title}
+            class="size-full object-cover"
+            style:view-transition-name={`podcast-${show.id}`}
+          />
         {:else}
           <img
             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'/%3E"
             alt={title}
             class="size-full object-cover bg-muted"
+            style:view-transition-name={`podcast-${show.id}`}
           />
         {/if}
       </AspectRatio>

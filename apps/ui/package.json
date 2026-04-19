@@ -15,7 +15,8 @@
     "@extractus/feed-extractor": "catalog:",
     "dompurify": "catalog:",
     "media-chrome": "catalog:",
-    "mode-watcher": "catalog:"
+    "mode-watcher": "catalog:",
+    "runed": "catalog:"
   },
   "devDependencies": {
     "@fontsource-variable/inter": "catalog:",
@@ -25,7 +26,6 @@
     "@sveltejs/kit": "latest",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/vite": "^4.2.2",
-    "@types/dompurify": "catalog:",
     "bits-ui": "catalog:",
     "clsx": "catalog:",
     "shadcn-svelte": "catalog:",
