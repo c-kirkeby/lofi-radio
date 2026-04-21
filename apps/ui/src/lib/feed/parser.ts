@@ -16,11 +16,7 @@ type EntryExtras = {
   image?: string;
 };
 
-export type Feed = FeedData &
-  FeedExtras & {
-    entries?: Array<FeedEntry & EntryExtras>;
-  };
-
+export type Feed = FeedData & { id: string; text: string } & FeedExtras;
 export type Entry = FeedEntry & EntryExtras;
 
 const PURIFY_OPTS = {

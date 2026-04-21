@@ -13,10 +13,15 @@
   },
   "dependencies": {
     "@extractus/feed-extractor": "catalog:",
+    "@signaldb/core": "catalog:",
+    "@signaldb/indexeddb": "catalog:",
+    "@signaldb/svelte": "catalog:",
+    "@signaldb/sync": "catalog:",
     "dompurify": "catalog:",
     "media-chrome": "catalog:",
     "mode-watcher": "catalog:",
-    "runed": "catalog:"
+    "runed": "catalog:",
+    "valibot": "catalog:"
   },
   "devDependencies": {
     "@fontsource-variable/inter": "catalog:",

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { getCachedShows } from "$lib/db/shows";
-  import { fetchFeed, parseDuration } from "$lib/feeds";
+  import { parseDuration } from "$lib/feeds";
   import { sanitiseDescription } from "$lib/feed/parser";
   import type { Entry } from "$lib/feed/parser";
   import { player } from "$lib/state/player.svelte";
@@ -18,15 +17,26 @@
   } from "@/components/ui/item";
   import { Play, Mic, Link } from "@lucide/svelte";
   import ItemSeparator from "@/components/ui/item/item-separator.svelte";
-  import { resolve } from "$app/paths";
+  import { feedEntriesCollection, feedsCollection } from "@/db/collections";
 
   const DESCRIPTION_LIMIT = 100;
 
-  const id = $derived(Number(page.params.id));
+  const id = $derived(page.params.id);
 
-  const shows = await getCachedShows();
-  const show = $derived(shows.find((s) => s.id === id));
-  const feed = $derived(show ? await fetchFeed(show.id, show.xmlUrl) : null);
+  const [feed] = $derived(
+    feedsCollection
+      .find({
+        id,
+      })
+      .fetch(),
+  );
+  const feedEntries = $derived(
+    feedEntriesCollection
+      .find({
+        feedId: id,
+      })
+      .fetch(),
+  );
 
   const sanitised = $derived(
     feed?.description ? sanitiseDescription(feed.description) : null,
@@ -194,7 +204,7 @@
 
   <!-- Episode list -->
   <ItemGroup>
-    {#each feed?.entries ?? [] as entry, index (entry.id ?? entry.title)}
+    {#each feedEntries ?? [] as entry, index (entry.id ?? entry.title)}
       {@const duration = parseDuration(entry.duration)}
       <Item class="py-0">
         <ItemContent class="grid grid-cols-5">
@@ -216,7 +226,7 @@
             <Play class="size-4" />
           </Button>
         </ItemActions>
-        {#if index !== (feed?.entries?.length ?? 0) - 1}
+        {#if index !== (feedEntries?.length ?? 0) - 1}
           <ItemSeparator />
         {/if}
       </Item>
