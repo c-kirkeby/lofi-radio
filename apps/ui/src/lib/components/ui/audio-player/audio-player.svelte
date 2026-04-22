@@ -28,8 +28,8 @@
   class={cn("w-full", className)}
   bind:this={mediaController}
   style="
-    --media-button-icon-width: 1rem;
-    --media-button-icon-height: 1rem;
+    --media-button-icon-width: 2rem;
+    --media-button-icon-height: 2rem;
     --media-icon-color: var(--foreground);
     --media-font: var(--font-sans);
     --media-font-size: 10px;

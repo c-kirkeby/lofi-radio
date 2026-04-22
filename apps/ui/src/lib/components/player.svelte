@@ -32,36 +32,41 @@
 />
 
 <div
-  class="fixed bottom-0 w-full flex items-center gap-3 p-2 bg-background border-t border-border z-10 transition-transform duration-200"
+  class="fixed bottom-0 w-full flex items-center gap-3 p-2 bg-background border-t border-border z-10 transition-transform duration-200 px-8"
   class:translate-y-full={!player.src}
 >
   {#if player.image}
     <img
       src={player.image}
       alt="Episode thumbnail"
-      class="size-14 rounded-md object-cover shrink-0"
+      class="size-18 rounded-md object-cover shrink-0"
     />
   {/if}
 
   <div class="min-w-0 flex-1 relative">
     <AudioPlayer
+      class="h-20 flex flex-col justify-center"
       bind:audio={player.audio}
       bind:mediaController={player.mediaController}
     >
-      <div class="flex items-center gap-2">
-        <div class="flex items-center">
+      <div class="flex items-center gap-2 justify-center">
+        <div class="flex items-center gap-4">
           <AudioPlayerSeekBackwardButton
-            class={buttonVariants({ size: "icon-lg", variant: "ghost" })}
+            class={buttonVariants({ size: "icon-3xl", variant: "secondary" })}
+            seekOffset={15}
           />
           <AudioPlayerPlayButton
-            class={buttonVariants({ size: "icon-lg", variant: "ghost" })}
+            class={buttonVariants({ size: "icon-3xl", variant: "ghost" })}
           />
           <AudioPlayerSeekForwardButton
-            class={buttonVariants({ size: "icon-lg", variant: "ghost" })}
+            class={buttonVariants({ size: "icon-3xl", variant: "ghost" })}
+            seekOffset={30}
           />
         </div>
-        <div class="flex flex-col min-w-0 flex-1">
-          <div class="info text-sm truncate text-center">
+        <div class="flex-col min-w-0 flex-1 md:flex hidden">
+          <div
+            class="info text-sm truncate text-center flex flex-col justify-center"
+          >
             <strong>{player.title}</strong>
             <span class="text-muted-foreground">{player.show}</span>
           </div>
