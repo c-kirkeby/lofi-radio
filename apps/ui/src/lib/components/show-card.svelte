@@ -30,7 +30,7 @@
 
 <a href={resolve(`/feed/${show.id}`)} class="block">
   <Card.Root
-    class="py-0 overflow-hidden transition-transform duration-200 ease-in-out hover:scale-105"
+    class="py-0 overflow-hidden transition-transform duration-100 ease-in-out hover:scale-105"
   >
     <Card.Content class="px-0">
       <AspectRatio ratio={1 / 1}>

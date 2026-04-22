@@ -2,12 +2,14 @@ export interface PlayerEpisode {
   src: string;
   title: string;
   show: string;
+  id: number;
   image: string | null;
 }
 
 export class Player {
   title = $state<string | null>(null);
   show = $state<string | null>(null);
+  id = $state<number | null>(null);
   image = $state<string | null>(null);
   src = $state<string | null>(null);
 
@@ -26,6 +28,7 @@ export class Player {
     this.title = episode.title;
     this.show = episode.show;
     this.image = episode.image;
+    this.id = episode.id;
     this.src = episode.src;
 
     if (this.audio) {

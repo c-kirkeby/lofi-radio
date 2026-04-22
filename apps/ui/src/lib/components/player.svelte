@@ -14,6 +14,7 @@
     AudioPlayerTimeRange,
     AudioPlayerVolumeRange,
   } from "./ui/audio-player";
+  import { resolve } from "$app/paths";
 </script>
 
 <svelte:window
@@ -36,11 +37,13 @@
   class:translate-y-full={!player.src}
 >
   {#if player.image}
-    <img
-      src={player.image}
-      alt="Episode thumbnail"
-      class="size-18 rounded-md object-cover shrink-0"
-    />
+    <a href={resolve(`/feed/${player.id}`)}>
+      <img
+        src={player.image}
+        alt="Episode thumbnail"
+        class="size-18 rounded-md object-cover shrink-0 transition-transform duration-100 ease-in-out hover:scale-105"
+      />
+    </a>
   {/if}
 
   <div class="min-w-0 flex-1 relative">

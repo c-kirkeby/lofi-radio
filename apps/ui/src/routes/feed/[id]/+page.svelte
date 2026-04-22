@@ -43,6 +43,7 @@
       src: entry.url,
       title: entry.title,
       show: feed.title,
+      id: feed.id,
       image: feed.image,
     });
   }
