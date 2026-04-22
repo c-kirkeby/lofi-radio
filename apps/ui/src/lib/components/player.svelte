@@ -71,7 +71,13 @@
             class="info text-sm truncate text-center flex flex-col justify-center"
           >
             <strong>{player.title}</strong>
-            <span class="text-muted-foreground">{player.show}</span>
+
+            <a
+              class="text-muted-foreground hover:underline font-bold"
+              href={resolve(`/feed/${player.id}`)}
+            >
+              {player.show}
+            </a>
           </div>
           <AudioPlayerControlBar>
             <AudioPlayerTimeDisplay />

@@ -13,6 +13,7 @@ type EntryExtras = {
   type?: string;
   length?: string;
   duration?: string;
+  image?: string;
 };
 
 export type Feed = FeedData &
@@ -44,6 +45,9 @@ type RawFeedData = {
 type RawEntryData = {
   enclosure?: { "@_url"?: string; "@_type"?: string; "@_length"?: string };
   "itunes:duration"?: string;
+  "itunes:image"?: {
+    "@_href"?: string;
+  };
 };
 
 const xmlParserOptions = {
@@ -66,12 +70,13 @@ export async function parseFeed(rssUrl: string): Promise<Feed> {
       return { image, owner, author, categories } satisfies FeedExtras;
     },
     getExtraEntryFields(entryData: RawEntryData) {
-      const { enclosure, "itunes:duration": duration } = entryData;
+      const { enclosure, "itunes:duration": duration, "itunes:image": image } = entryData;
 
       return {
         url: enclosure?.["@_url"],
         type: enclosure?.["@_type"],
         length: enclosure?.["@_length"],
+        image: image?.["@_href"],
         duration,
       } satisfies EntryExtras;
     },
