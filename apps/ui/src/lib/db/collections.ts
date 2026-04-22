@@ -2,6 +2,18 @@ import { Collection } from "@signaldb/core";
 import createIndexedDBAdapter from "@signaldb/indexeddb";
 import svelteReactivityAdapter from "@signaldb/svelte";
 
+export type FeedEntry = {
+  id?: string;
+  title?: string;
+  link: string;
+  published: string;
+  description: string;
+  url: string;
+  type: string;
+  length: string;
+  duration: string;
+};
+
 export const feedsCollection = new Collection<{
   id: string;
   title?: string;
@@ -11,23 +23,8 @@ export const feedsCollection = new Collection<{
   author?: string;
   language?: string;
   image?: string;
+  entries?: FeedEntry[];
 }>({
   reactivity: svelteReactivityAdapter,
   persistence: createIndexedDBAdapter("feeds"),
-});
-
-export const feedEntriesCollection = new Collection<{
-  id: string;
-  feedId: string;
-  title?: string;
-  link: string;
-  published: string;
-  description: string;
-  url: string;
-  type: string;
-  length: string;
-  duration: string;
-}>({
-  reactivity: svelteReactivityAdapter,
-  persistence: createIndexedDBAdapter("feedEntries"),
 });

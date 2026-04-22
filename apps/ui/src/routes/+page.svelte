@@ -2,7 +2,7 @@
   import FeedGrid from "$lib/components/feed-grid.svelte";
   import { OPMLParser } from "$lib/opml";
   import * as Empty from "$lib/components/ui/empty";
-  import { feedEntriesCollection, feedsCollection } from "@/db/collections";
+  import { feedsCollection } from "@/db/collections";
   import { Label } from "@/components/ui/label";
   import { Input } from "@/components/ui/input";
   import { getFeed } from "@/feed.remote";
@@ -10,9 +10,12 @@
   import { AspectRatio } from "@/components/ui/aspect-ratio";
   import { Skeleton } from "@/components/ui/skeleton";
 
+  let isLoading = $state(false);
+
   const feeds = $derived(feedsCollection.find().fetch());
 
   async function handleImport(event: Event) {
+    isLoading = true;
     const target = event.target as HTMLInputElement;
     const file = target?.files?.[0];
 
@@ -22,16 +25,11 @@
 
       opmlFeeds.forEach(async (feed) => {
         const { entries, ...fullFeed } = await getFeed(feed.xmlUrl).run();
-        const id = feedsCollection.insert(fullFeed);
-        console.debug(entries);
-        feedEntriesCollection.insertMany(
-          entries?.map((entry) => ({ feedId: id, ...entry })) ?? [],
-        );
+        feedsCollection.insert({ ...fullFeed, entries });
       });
     }
+    isLoading = false;
   }
-
-  const isLoading = $derived(feedsCollection.isLoading());
 </script>
 
 <div class="min-h-screen p-6 pb-24 mx-auto container">

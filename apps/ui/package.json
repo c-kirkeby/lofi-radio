@@ -21,7 +21,8 @@
     "media-chrome": "catalog:",
     "mode-watcher": "catalog:",
     "runed": "catalog:",
-    "valibot": "catalog:"
+    "valibot": "catalog:",
+    "virtua": "catalog:"
   },
   "devDependencies": {
     "@fontsource-variable/inter": "catalog:",

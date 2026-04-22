@@ -2,7 +2,6 @@
   import { page } from "$app/state";
   import { parseDuration } from "$lib/feeds";
   import { sanitiseDescription } from "$lib/feed/parser";
-  import type { Entry } from "$lib/feed/parser";
   import { player } from "$lib/state/player.svelte";
   import { Skeleton } from "@/components/ui/skeleton";
   import { Button } from "@/components/ui/button";
@@ -17,7 +16,8 @@
   } from "@/components/ui/item";
   import { Play, Mic, Link } from "@lucide/svelte";
   import ItemSeparator from "@/components/ui/item/item-separator.svelte";
-  import { feedEntriesCollection, feedsCollection } from "@/db/collections";
+  import { feedsCollection, type FeedEntry } from "@/db/collections";
+  import { WindowVirtualizer } from "virtua/svelte";
 
   const DESCRIPTION_LIMIT = 100;
 
@@ -30,13 +30,7 @@
       })
       .fetch(),
   );
-  const feedEntries = $derived(
-    feedEntriesCollection
-      .find({
-        feedId: id,
-      })
-      .fetch(),
-  );
+  const feedEntries = $derived(feed?.entries ?? []);
 
   const sanitised = $derived(
     feed?.description ? sanitiseDescription(feed.description) : null,
@@ -46,7 +40,7 @@
   );
   let descriptionExpanded = $state(false);
 
-  function playEpisode(entry: Entry) {
+  function playEpisode(entry: FeedEntry) {
     if (!entry.url || !feed?.title || !feed.image || !entry.title) return;
 
     player.load({
@@ -202,34 +196,36 @@
     </div>
   </div>
 
-  <!-- Episode list -->
   <ItemGroup>
-    {#each feedEntries ?? [] as entry, index (entry.id ?? entry.title)}
-      {@const duration = parseDuration(entry.duration)}
-      <Item class="py-0">
-        <ItemContent class="grid grid-cols-5">
-          <ItemTitle class="col-span-3">{entry.title ?? "Untitled"}</ItemTitle>
-          <ItemDescription>
-            {formatDate(entry.published)}
-          </ItemDescription>
-          <ItemDescription>
-            {duration}
-          </ItemDescription>
-        </ItemContent>
-        <ItemActions>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Play {entry.title}"
-            onclick={() => playEpisode(entry)}
-          >
-            <Play class="size-4" />
-          </Button>
-        </ItemActions>
+    <WindowVirtualizer data={feedEntries}>
+      {#snippet children(entry, index)}
+        {@const duration = parseDuration(entry.duration)}
+        <Item>
+          <ItemContent class="grid grid-cols-5">
+            <ItemTitle class="col-span-3">{entry.title ?? "Untitled"}</ItemTitle
+            >
+            <ItemDescription>
+              {formatDate(entry.published)}
+            </ItemDescription>
+            <ItemDescription>
+              {duration}
+            </ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Play {entry.title}"
+              onclick={() => playEpisode(entry)}
+            >
+              <Play class="size-4" />
+            </Button>
+          </ItemActions>
+        </Item>
         {#if index !== (feedEntries?.length ?? 0) - 1}
           <ItemSeparator />
         {/if}
-      </Item>
-    {/each}
+      {/snippet}
+    </WindowVirtualizer>
   </ItemGroup>
 </div>
