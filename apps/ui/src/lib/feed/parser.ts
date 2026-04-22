@@ -61,7 +61,9 @@ export async function parseFeed(rssUrl: string): Promise<Feed> {
       const owner = feedData["itunes:owner"]?.["itunes:name"];
       const raw = feedData["itunes:category"];
       const rawArr = raw == null ? [] : Array.isArray(raw) ? raw : [raw];
-      const categories = rawArr.map((c) => c["@_text"]).filter((t): t is string => t != null);
+      const categories = Array.from(
+        new Set(rawArr.map((c) => c["@_text"]).filter((t): t is string => t != null)),
+      );
 
       return { image, owner, author, categories } satisfies FeedExtras;
     },
