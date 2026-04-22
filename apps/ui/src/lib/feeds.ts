@@ -10,14 +10,27 @@ export function parseDuration(raw: string | number | undefined): string | null {
   if (raw === undefined || raw === null || raw === "") return null;
   let duration: string | number = raw;
   if (typeof raw === "number") {
-    duration = new Date(raw * 1000).toISOString().substring(11, 16);
+    const hours = Math.floor(raw / 3600);
+    const minutes = Math.floor((raw % 3600) / 60);
+    const seconds = raw % 60;
+    const options = { style: hours < 1 ? "long" : "narrow" };
+    /** @ts-expect-error {@link https://github.com/microsoft/TypeScript/issues/60608} **/
+    return new Intl.DurationFormat(window.navigator.language, options).format({
+      hours,
+      minutes,
+      seconds: hours === 0 && minutes === 0 ? seconds : 0,
+    });
   }
-  const [hours = 0, minutes = 0, seconds = 0] = (duration as string).split(":").map(Number);
+  const parts = (duration as string).split(":").map(Number);
+  const [hours, minutes, seconds] = parts.length === 3 ? parts : [0, parts[0] ?? 0, parts[1] ?? 0];
 
-  return new Intl.DurationFormat("en", { style: "narrow" }).format({
+  const options = { style: hours < 1 ? "long" : "narrow" };
+
+  /** @ts-expect-error {@link https://github.com/microsoft/TypeScript/issues/60608} **/
+  return new Intl.DurationFormat(window.navigator.language, options).format({
     hours,
     minutes,
-    seconds,
+    seconds: hours === 0 && minutes === 0 ? seconds : 0,
   });
 }
 /**

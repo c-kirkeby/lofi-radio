@@ -49,11 +49,44 @@
 
   function formatDate(published: string | undefined): string {
     if (!published) return "";
-    return new Date(published).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+
+    const date = new Date(published);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+
+    const locale = window.navigator.language;
+    const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+
+    if (diffSeconds < 60) {
+      return rtf.format(-diffSeconds, "second");
+    } else if (diffMinutes < 60) {
+      return rtf.format(-diffMinutes, "minute");
+    } else if (diffHours < 24) {
+      return rtf.format(-diffHours, "hour");
+    } else {
+      // Check if the date was "yesterday" (any time in the previous calendar day)
+      const parts = rtf.formatToParts(-1, "day");
+      const yesterdayLiteral = parts.map((p) => p.value).join("");
+
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+      const startOfYesterday = new Date(startOfToday);
+      startOfYesterday.setDate(startOfToday.getDate() - 1);
+
+      if (date >= startOfYesterday && date < startOfToday) {
+        return yesterdayLiteral;
+      }
+
+      const sameYear = date.getFullYear() === now.getFullYear();
+      return date.toLocaleDateString(locale, {
+        ...(sameYear ? {} : { year: "numeric" }),
+        month: "short",
+        day: "numeric",
+      });
+    }
   }
 </script>
 
@@ -163,12 +196,13 @@
     {#each feed?.entries ?? [] as entry, index (entry.id ?? entry.title)}
       {@const duration = parseDuration(entry.duration)}
       <Item class="py-0">
-        <ItemContent>
-          <ItemTitle>{entry.title ?? "Untitled"}</ItemTitle>
+        <ItemContent class="grid grid-cols-5">
+          <ItemTitle class="col-span-3">{entry.title ?? "Untitled"}</ItemTitle>
           <ItemDescription>
-            {formatDate(entry.published)}{#if duration && entry.published}
-              ·
-            {/if}{duration}
+            {formatDate(entry.published)}
+          </ItemDescription>
+          <ItemDescription>
+            {duration}
           </ItemDescription>
         </ItemContent>
         <ItemActions>
