@@ -20,7 +20,7 @@
   import ItemSeparator from "@/components/ui/item/item-separator.svelte";
   import { resolve } from "$app/paths";
 
-  const DESCRIPTION_LIMIT = 200;
+  const DESCRIPTION_LIMIT = 100;
 
   const id = $derived(Number(page.params.id));
 
@@ -59,7 +59,6 @@
 
 <div class="min-h-screen p-6 pb-24 mx-auto container max-w-8xl">
   {#if !feed}
-    <!-- Header skeleton -->
     <div class="flex gap-8 mb-8">
       <Skeleton class="size-48 rounded-xl shrink-0" />
       <div class="flex flex-col gap-3 justify-start pt-1 flex-1">
@@ -85,20 +84,36 @@
     {/each}
   {/if}
 
-  <!-- Feed header -->
-  <div class="flex gap-8 mb-8">
+  <div class="flex flex-col items-center md:items-start md:flex-row gap-8 mb-8">
     {#if feed?.image}
-      <img
-        src={feed.image}
-        alt={feed.title}
-        class="size-48 rounded-xl object-cover shrink-0"
-        style:view-transition-name={`podcast-${id}`}
-      />
+      <div class="relative shrink-0">
+        <div
+          style="--background-image: url({feed.image})"
+          class="bg-(image:--background-image) absolute bg-cover -z-10 inset-1 scale-200 rotate-45 blur-3xl md:hidden"
+        ></div>
+        <img
+          src={feed.image}
+          alt={feed.title}
+          class="size-32 rounded-xl object-cover md:size-48"
+          style:view-transition-name={`podcast-${feed.id}`}
+        />
+      </div>
     {/if}
     <div class="flex flex-col justify-start pt-1 gap-2 min-w-0">
-      <h1 class="text-2xl font-semibold tracking-tight">{feed?.title}</h1>
+      <h1
+        class="text-2xl font-semibold tracking-tight text-center md:text-start"
+      >
+        {feed?.title}
+      </h1>
+      {#if feed?.categories?.length}
+        <div class="hidden md:flex flex-row gap-2">
+          {#each feed.categories as category (category)}
+            <Badge variant="secondary">{category}</Badge>
+          {/each}
+        </div>
+      {/if}
       <div
-        class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground"
+        class="flex flex-col md:flex-row font-bold flex-wrap justify-center md:justify-start items-center md:items-start gap-x-3 gap-y-1.5 text-sm text-muted-foreground"
       >
         {#if feed?.author}
           <span class="flex items-center gap-1.5">
@@ -138,13 +153,6 @@
               {descriptionExpanded ? "Show less" : "Read more"}
             </button>
           {/if}
-        </div>
-      {/if}
-      {#if feed?.categories?.length}
-        <div class="flex flex-row gap-2">
-          {#each feed.categories as category (category)}
-            <Badge variant="secondary">{category}</Badge>
-          {/each}
         </div>
       {/if}
     </div>
