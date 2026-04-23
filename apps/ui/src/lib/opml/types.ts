@@ -1,6 +1,4 @@
 export interface OPMLFeed {
-  /** Auto-incremented id assigned when persisted to IndexedDB */
-  id?: number;
   /** The display name of the show/feed */
   text: string;
   /** The RSS feed URL */

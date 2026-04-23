@@ -37,7 +37,7 @@
   class:translate-y-full={!player.src}
 >
   {#if player.image}
-    <a href={resolve(`/feed/${player.id}`)}>
+    <a href={resolve(`/podcast/${player.id}`)}>
       <img
         src={player.image}
         alt="Episode thumbnail"
@@ -74,7 +74,7 @@
 
             <a
               class="text-muted-foreground hover:underline font-bold"
-              href={resolve(`/feed/${player.id}`)}
+              href={resolve(`/podcast/${player.id}`)}
             >
               {player.show}
             </a>

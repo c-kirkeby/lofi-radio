@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { parseDuration } from "$lib/feeds";
-  import { sanitiseDescription } from "$lib/feed/parser";
+  import { sanitiseDescription, type Entry } from "$lib/feed/parser";
   import { player } from "$lib/state/player.svelte";
   import { Skeleton } from "@/components/ui/skeleton";
   import { Button } from "@/components/ui/button";
@@ -16,21 +16,23 @@
   } from "@/components/ui/item";
   import { Play, Mic, Link } from "@lucide/svelte";
   import ItemSeparator from "@/components/ui/item/item-separator.svelte";
-  import { feedsCollection, type FeedEntry } from "@/db/collections";
+  import { eq, useLiveQuery } from "@tanstack/svelte-db";
+  import { podcastsMetaCollection } from "@/db/collections";
   import { WindowVirtualizer } from "virtua/svelte";
 
   const DESCRIPTION_LIMIT = 100;
 
   const id = $derived(page.params.id);
 
-  const [feed] = $derived(
-    feedsCollection
-      .find({
-        id,
-      })
-      .fetch(),
+  const query = useLiveQuery((q) =>
+    q
+      .from({ podcastMeta: podcastsMetaCollection })
+      .where(({ podcastMeta }) => eq(podcastMeta.podcastId, id))
+      .select(({ podcastMeta }) => podcastMeta),
   );
-  const feedEntries = $derived(feed?.entries ?? []);
+
+  const feed = $derived(query.data?.[0]);
+  const feedEntries = $derived((feed?.entries ?? []) as Entry[]);
 
   const sanitised = $derived(
     feed?.description ? sanitiseDescription(feed.description) : null,
@@ -40,14 +42,14 @@
   );
   let descriptionExpanded = $state(false);
 
-  function playEpisode(entry: FeedEntry) {
+  function playEpisode(entry: Entry) {
     if (!entry.url || !feed?.title || !feed.image || !entry.title) return;
 
     player.load({
       src: entry.url,
       title: entry.title,
       show: feed.title,
-      id: feed.id,
+      id: feed.podcastId,
       image: entry.image ?? feed.image,
     });
   }
@@ -133,7 +135,7 @@
           src={feed.image}
           alt={feed.title}
           class="size-32 rounded-xl object-cover md:size-48"
-          style:view-transition-name={`podcast-${feed.id}`}
+          style:view-transition-name={`podcast-${feed.podcastId}`}
         />
       </div>
     {/if}

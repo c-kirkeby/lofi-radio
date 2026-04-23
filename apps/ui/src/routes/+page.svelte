@@ -1,41 +1,35 @@
 <script lang="ts">
-  import FeedGrid from "$lib/components/feed-grid.svelte";
+  import PodcastGrid from "$lib/components/podcast-grid.svelte";
   import { OPMLParser } from "$lib/opml";
   import * as Empty from "$lib/components/ui/empty";
-  import { feedsCollection } from "@/db/collections";
   import { Label } from "@/components/ui/label";
   import { Input } from "@/components/ui/input";
-  import { getFeed } from "@/feed.remote";
   import * as Card from "@/components/ui/card";
   import { AspectRatio } from "@/components/ui/aspect-ratio";
   import { Skeleton } from "@/components/ui/skeleton";
+  import { podcastsCollection } from "@/db/collections";
+  import { useLiveQuery } from "@tanstack/svelte-db";
 
-  let isLoading = $state(false);
-
-  const feeds = $derived(feedsCollection.find().fetch());
+  const query = useLiveQuery((q) => q.from({ podcasts: podcastsCollection }));
 
   async function handleImport(event: Event) {
-    isLoading = true;
     const target = event.target as HTMLInputElement;
     const file = target?.files?.[0];
 
     if (file) {
       const parser = new OPMLParser();
       const opmlFeeds = parser.parse(await file.text()).feeds;
-
-      opmlFeeds.forEach(async (feed) => {
-        const { entries, ...fullFeed } = await getFeed(feed.xmlUrl).run();
-        feedsCollection.insert({ ...fullFeed, entries });
-      });
+      //
+      podcastsCollection.insert(
+        opmlFeeds.map((feed) => ({ id: crypto.randomUUID(), ...feed })),
+      );
     }
-    isLoading = false;
   }
 </script>
 
 <div class="min-h-screen p-6 pb-24 mx-auto container">
   <h1 class="mb-6 text-2xl font-semibold tracking-tight">Podcasts</h1>
-
-  {#if isLoading}
+  {#if query.isLoading}
     {#each { length: 12 } as _, i (i)}
       <Card.Root class="py-0 overflow-hidden">
         <Card.Content class="px-0">
@@ -45,8 +39,9 @@
         </Card.Content>
       </Card.Root>
     {/each}
-  {:else if feeds.length > 0}
-    <FeedGrid {feeds} />
+  {:else if query.data.length > 0}
+    {@const podcasts = query.data}
+    <PodcastGrid {podcasts} />
   {:else}
     <Empty.Root class="border border-dashed">
       <Empty.Header>

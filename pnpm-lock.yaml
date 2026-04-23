@@ -15,18 +15,21 @@ catalogs:
     '@internationalized/date':
       specifier: ^3.12.1
       version: 3.12.1
-    '@signaldb/core':
-      specifier: ^1.8.1
-      version: 1.8.1
-    '@signaldb/indexeddb':
-      specifier: ^1.1.0
-      version: 1.1.0
-    '@signaldb/svelte':
-      specifier: ^1.1.1
-      version: 1.1.1
-    '@signaldb/sync':
-      specifier: ^1.3.1
-      version: 1.3.1
+    '@tanstack/browser-db-sqlite-persistence':
+      specifier: ^0.1.9
+      version: 0.1.9
+    '@tanstack/db':
+      specifier: ^0.6.5
+      version: 0.6.5
+    '@tanstack/query-core':
+      specifier: ^5.99.2
+      version: 5.99.2
+    '@tanstack/query-db-collection':
+      specifier: ^1.0.36
+      version: 1.0.36
+    '@tanstack/svelte-db':
+      specifier: ^0.1.82
+      version: 0.1.82
     bits-ui:
       specifier: ^2.17.3
       version: 2.17.3
@@ -84,18 +87,21 @@ importers:
       '@extractus/feed-extractor':
         specifier: 'catalog:'
         version: 7.1.7
-      '@signaldb/core':
+      '@tanstack/browser-db-sqlite-persistence':
         specifier: 'catalog:'
-        version: 1.8.1
-      '@signaldb/indexeddb':
+        version: 0.1.9(@journeyapps/wa-sqlite@1.6.0)(typescript@6.0.2)
+      '@tanstack/db':
         specifier: 'catalog:'
-        version: 1.1.0(@signaldb/core@1.8.1)
-      '@signaldb/svelte':
+        version: 0.6.5(typescript@6.0.2)
+      '@tanstack/query-core':
         specifier: 'catalog:'
-        version: 1.1.1(@signaldb/core@1.8.1)(svelte@5.55.4)
-      '@signaldb/sync':
+        version: 5.99.2
+      '@tanstack/query-db-collection':
         specifier: 'catalog:'
-        version: 1.3.1(@signaldb/core@1.8.1)
+        version: 1.0.36(@tanstack/query-core@5.99.2)(typescript@6.0.2)
+      '@tanstack/svelte-db':
+        specifier: 'catalog:'
+        version: 0.1.82(svelte@5.55.4)(typescript@6.0.2)
       dompurify:
         specifier: 'catalog:'
         version: 3.4.0
@@ -232,6 +238,9 @@ packages:
 
   '@internationalized/date@3.12.1':
     resolution: {integrity: sha512-6IedsVWXyq4P9Tj+TxuU8WGWM70hYLl12nbYU8jkikVpa6WXapFazPUcHUMDMoWftIDE2ILDkFFte6W2nFCkRQ==}
+
+  '@journeyapps/wa-sqlite@1.6.0':
+    resolution: {integrity: sha512-ZhHCTQiGGGoJz6LJPTH880BMO0kR0uVepoNTGCUpl65ZQ82r1RUHXGUpGWY3yndsjWKNveOxsqCCAgvI+TTu2w==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -654,25 +663,6 @@ packages:
   '@rolldown/pluginutils@1.0.0-rc.15':
     resolution: {integrity: sha512-UromN0peaE53IaBRe9W7CjrZgXl90fqGpK+mIZbA3qSTeYqg3pqpROBdIPvOG3F5ereDHNwoHBI2e50n1BDr1g==}
 
-  '@signaldb/core@1.8.1':
-    resolution: {integrity: sha512-85+ehSokMaKrPue42wPLmF+tU2jfky99kC2UlamfYS64I1YMMCWDeOdx17PNMpTxLdGFlCgnDEpTZB5XO3HFyQ==}
-
-  '@signaldb/indexeddb@1.1.0':
-    resolution: {integrity: sha512-TZIyLG7X11pwdGgQ9uD9k4OvxVwBmGjE7AQ4ZkSLEAvI7O822lwz+fTdJL2d/6sTQ5hGvoXkoqwcZCyb7e8g+w==}
-    peerDependencies:
-      '@signaldb/core': 1.x
-
-  '@signaldb/svelte@1.1.1':
-    resolution: {integrity: sha512-U4B2g6VPXrhCKjEYXMr9oMh6Vtrv4a2wdAZuek0HNdBrAgoxJM2TUlvY+bK1ePE6L/gadkvpndRuHXH4p4VFiQ==}
-    peerDependencies:
-      '@signaldb/core': 1.x
-      svelte: ^5.7.0
-
-  '@signaldb/sync@1.3.1':
-    resolution: {integrity: sha512-qAKkWAfPtEobZJ3yNqtOKZd1uCzXxIKpz3P1BL1WLSzteGpcVSRYHGKEmQ180572K8n2Sz2nRoOAwqbjEkJEbQ==}
-    peerDependencies:
-      '@signaldb/core': ^1.4.0
-
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
@@ -805,6 +795,45 @@ packages:
     resolution: {integrity: sha512-mEiF5HO1QqCLXoNEfXVA1Tzo+cYsrqV7w9Juj2wdUFyW07JRenqMG225MvPwr3ZD9N1bFQj46X7r33iHxLUW0w==}
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
+
+  '@tanstack/browser-db-sqlite-persistence@0.1.9':
+    resolution: {integrity: sha512-HVcrHGkIw62nT8dTnlblUN9Zn5CewIWXNzPsQaMqDy7qmnvkgE58xJeRInYr3HKbmKMm/E/mlFBkZygRkPr0/w==}
+    peerDependencies:
+      '@journeyapps/wa-sqlite': ^1.4.1
+      typescript: '>=4.7'
+
+  '@tanstack/db-ivm@0.1.18':
+    resolution: {integrity: sha512-+pZJiRKdoKRM5Epq9T7otD9ZJl82pRFauo7LKuJGrarjVKQ7r+QQlPe3kGdN9LEKSnuNGIWjX9OOY4M8kH4eLw==}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@tanstack/db-sqlite-persistence-core@0.1.9':
+    resolution: {integrity: sha512-Ju4HcBzaSXTaPJFMRWNjiyXRfCmom0AXBr/22sqLoQWY1TjFM/UTbSSTQgsrExkNuFDVFiV8EDpCt8WUBFiKcQ==}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@tanstack/db@0.6.5':
+    resolution: {integrity: sha512-gtCuAo4UtC9SR/kTMu5fVEff6qZ2R1FZi9X7MybtHKA6wve7RePifGG6qBI4OmMB+7juT5/+glNbnqZOrG0/pg==}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@tanstack/pacer-lite@0.2.1':
+    resolution: {integrity: sha512-3PouiFjR4B6x1c969/Pl4ZIJleof1M0n6fNX8NRiC9Sqv1g06CVDlEaXUR4212ycGFyfq4q+t8Gi37Xy+z34iQ==}
+    engines: {node: '>=18'}
+
+  '@tanstack/query-core@5.99.2':
+    resolution: {integrity: sha512-1HunU0bXVsR1ZJMZbcOPE6VtaBJxsW809RE9xPe4Gz7MlB0GWwQvuTPhMoEmQ/hIzFKJ/DWAuttIe7BOaWx0tA==}
+
+  '@tanstack/query-db-collection@1.0.36':
+    resolution: {integrity: sha512-WOHSZeqFOflWpMxp7ndu8x3M8GyLieWyUsS1fReG8wv6I/1MGOz1j3+XNlGoeoWolYF2hV4l324/dB9BxjAwxw==}
+    peerDependencies:
+      '@tanstack/query-core': ^5.0.0
+      typescript: '>=4.7'
+
+  '@tanstack/svelte-db@0.1.82':
+    resolution: {integrity: sha512-P7DRmE3e5fUSmIr2DS6KzYV5+Mx+JUxU4qJr517yEsBNXpUlnuL0cieK/1iVG9T75ptJuIuWhDsxWprwMEazgg==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -1102,9 +1131,6 @@ packages:
       '@typescript-eslint/types':
         optional: true
 
-  fast-sort@3.4.1:
-    resolution: {integrity: sha512-76uvGPsF6So53sZAqenP9UVT3p5l7cyTHkLWVCMinh41Y8NDrK1IYXJgaBMfc1gk7nJiSRZp676kddFG2Aa5+A==}
-
   fast-xml-builder@1.1.4:
     resolution: {integrity: sha512-f2jhpN4Eccy0/Uz9csxh3Nu6q4ErKxf0XIsasomfOihuSUa3/xw6w8dnOtCDgEItQFJG8KyXPzQXzcODDrrbOg==}
 
@@ -1120,6 +1146,10 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fractional-indexing@3.2.0:
+    resolution: {integrity: sha512-PcOxmqwYCW7O2ovKRU8OoQQj2yqTfEB/yeTYk4gPid6dN5ODRfU1hXd9tTVZzax/0NkO7AxpHykvZnT1aYp/BQ==}
+    engines: {node: ^14.13.1 || >=16.0.0}
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -1235,9 +1265,6 @@ packages:
 
   media-chrome@4.19.0:
     resolution: {integrity: sha512-HWhDTwts+BSbdPkkB1VsJXp5kvL0IxY7xFT5tBwliM2+89kTPVTnHnev+9it2f9PweANjT/C8/C/S0PW9oyZbA==}
-
-  mingo@7.2.1:
-    resolution: {integrity: sha512-MEIQPOSJS2sVCueyQeE2rzgEeW3HpIIhizPbeuwD4v7+miVj7NI3ZVPqqw8t3YPIWCivpIaXA4KsoRI7koyNOA==}
 
   mode-watcher@1.1.0:
     resolution: {integrity: sha512-mUT9RRGPDYenk59qJauN1rhsIMKBmWA3xMF+uRwE8MW/tjhaDSCCARqkSuDTq8vr4/2KcAxIGVjACxTjdk5C3g==}
@@ -1385,6 +1412,9 @@ packages:
   sirv@3.0.2:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
     engines: {node: '>=18'}
+
+  sorted-btree@1.8.1:
+    resolution: {integrity: sha512-395+XIP+wqNn3USkFSrNz7G3Ss/MXlZEqesxvzCRFwL14h6e8LukDHdLBePn5pwbm5OQ9vGu8mDyz2lLDIqamQ==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -1642,6 +1672,8 @@ snapshots:
     dependencies:
       '@swc/helpers': 0.5.21
 
+  '@journeyapps/wa-sqlite@1.6.0': {}
+
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -1871,24 +1903,6 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.0-rc.15': {}
 
-  '@signaldb/core@1.8.1':
-    dependencies:
-      fast-sort: 3.4.1
-      mingo: 7.2.1
-
-  '@signaldb/indexeddb@1.1.0(@signaldb/core@1.8.1)':
-    dependencies:
-      '@signaldb/core': 1.8.1
-
-  '@signaldb/svelte@1.1.1(@signaldb/core@1.8.1)(svelte@5.55.4)':
-    dependencies:
-      '@signaldb/core': 1.8.1
-      svelte: 5.55.4
-
-  '@signaldb/sync@1.3.1(@signaldb/core@1.8.1)':
-    dependencies:
-      '@signaldb/core': 1.8.1
-
   '@standard-schema/spec@1.1.0': {}
 
   '@sveltejs/acorn-typescript@1.0.9(acorn@8.16.0)':
@@ -1999,6 +2013,49 @@ snapshots:
       '@tailwindcss/oxide': 4.2.2
       tailwindcss: 4.2.2
       vite: '@voidzero-dev/vite-plus-core@0.1.16(@types/node@25.6.0)(jiti@2.6.1)(typescript@6.0.2)(yaml@2.8.3)'
+
+  '@tanstack/browser-db-sqlite-persistence@0.1.9(@journeyapps/wa-sqlite@1.6.0)(typescript@6.0.2)':
+    dependencies:
+      '@journeyapps/wa-sqlite': 1.6.0
+      '@tanstack/db-sqlite-persistence-core': 0.1.9(typescript@6.0.2)
+      typescript: 6.0.2
+
+  '@tanstack/db-ivm@0.1.18(typescript@6.0.2)':
+    dependencies:
+      fractional-indexing: 3.2.0
+      sorted-btree: 1.8.1
+      typescript: 6.0.2
+
+  '@tanstack/db-sqlite-persistence-core@0.1.9(typescript@6.0.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db': 0.6.5(typescript@6.0.2)
+      typescript: 6.0.2
+
+  '@tanstack/db@0.6.5(typescript@6.0.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db-ivm': 0.1.18(typescript@6.0.2)
+      '@tanstack/pacer-lite': 0.2.1
+      typescript: 6.0.2
+
+  '@tanstack/pacer-lite@0.2.1': {}
+
+  '@tanstack/query-core@5.99.2': {}
+
+  '@tanstack/query-db-collection@1.0.36(@tanstack/query-core@5.99.2)(typescript@6.0.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db': 0.6.5(typescript@6.0.2)
+      '@tanstack/query-core': 5.99.2
+      typescript: 6.0.2
+
+  '@tanstack/svelte-db@0.1.82(svelte@5.55.4)(typescript@6.0.2)':
+    dependencies:
+      '@tanstack/db': 0.6.5(typescript@6.0.2)
+      svelte: 5.55.4
+    transitivePeerDependencies:
+      - typescript
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
@@ -2252,8 +2309,6 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  fast-sort@3.4.1: {}
-
   fast-xml-builder@1.1.4:
     dependencies:
       path-expression-matcher: 1.5.0
@@ -2268,6 +2323,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
       picomatch: 4.0.4
+
+  fractional-indexing@3.2.0: {}
 
   fsevents@2.3.3:
     optional: true
@@ -2350,8 +2407,6 @@ snapshots:
       ce-la-react: 0.3.2(react@19.2.5)
     transitivePeerDependencies:
       - react
-
-  mingo@7.2.1: {}
 
   mode-watcher@1.1.0(svelte@5.55.4):
     dependencies:
@@ -2525,6 +2580,8 @@ snapshots:
       '@polka/url': 1.0.0-next.29
       mrmime: 2.0.1
       totalist: 3.0.1
+
+  sorted-btree@1.8.1: {}
 
   source-map-js@1.2.1: {}
 

@@ -52,7 +52,7 @@ const xmlParserOptions = {
   attributeNamePrefix: "@_",
 };
 
-export async function parseFeed(rssUrl: string): Promise<Feed> {
+export async function parseFeed(rssUrl: string) {
   const result = await extract(rssUrl, {
     xmlParserOptions,
     getExtraFeedFields(feedData: RawFeedData) {
@@ -80,5 +80,5 @@ export async function parseFeed(rssUrl: string): Promise<Feed> {
     },
   });
 
-  return result as Feed;
+  return result;
 }

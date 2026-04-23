@@ -2,14 +2,14 @@ export interface PlayerEpisode {
   src: string;
   title: string;
   show: string;
-  id: number;
+  id: string;
   image: string | null;
 }
 
 export class Player {
   title = $state<string | null>(null);
   show = $state<string | null>(null);
-  id = $state<number | null>(null);
+  id = $state<string | null>(null);
   image = $state<string | null>(null);
   src = $state<string | null>(null);
 
