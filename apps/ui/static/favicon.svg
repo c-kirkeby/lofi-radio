@@ -7,7 +7,7 @@
     rect {
       stroke: oklch(0.145 0 0)
     }
-    @media (color-scheme: dark) {
+    @media (prefers-color-scheme: dark) {
       path {
         stroke: oklch(0.985 0 0);
       }
