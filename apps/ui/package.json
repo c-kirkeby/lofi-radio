@@ -19,6 +19,7 @@
     "@tanstack/query-db-collection": "catalog:",
     "@tanstack/svelte-db": "catalog:",
     "dompurify": "catalog:",
+    "feedsmith": "catalog:",
     "media-chrome": "catalog:",
     "mode-watcher": "catalog:",
     "runed": "catalog:",
