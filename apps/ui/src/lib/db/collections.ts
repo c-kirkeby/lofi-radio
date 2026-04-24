@@ -8,7 +8,7 @@ import {
 } from "@tanstack/browser-db-sqlite-persistence";
 import { QueryClient } from "@tanstack/query-core";
 import * as v from "valibot";
-import { getFeed } from "@/feed.remote";
+import { parseFeedUrl } from "@/feed/parser";
 
 const queryClient = new QueryClient();
 
@@ -44,16 +44,16 @@ export const podcastsCollection = createCollection(
 );
 
 const EntrySchema = v.object({
-  id: v.string(),
+  id: v.optional(v.string()),
   link: v.optional(v.string()),
-  title: v.optional(v.string()),
-  description: v.optional(v.string()),
-  published: v.optional(v.string()),
   url: v.optional(v.string()),
+  title: v.optional(v.string()),
   type: v.optional(v.string()),
-  length: v.optional(v.string()),
-  duration: v.optional(v.string()),
+  length: v.optional(v.number()),
+  duration: v.optional(v.number()),
   image: v.optional(v.string()),
+  published: v.optional(v.string()),
+  description: v.optional(v.string()),
 });
 
 const PodcastMetaSchema = v.object({
@@ -64,11 +64,11 @@ const PodcastMetaSchema = v.object({
   generator: v.optional(v.string()),
   language: v.optional(v.string()),
   published: v.optional(v.string()),
-  entries: v.optional(v.array(EntrySchema)),
   image: v.optional(v.string()),
   owner: v.optional(v.string()),
   author: v.optional(v.string()),
   categories: v.optional(v.array(v.string())),
+  entries: v.optional(v.array(EntrySchema)),
 });
 
 export type PodcastMetaInput = v.InferInput<typeof PodcastMetaSchema>;
@@ -99,10 +99,10 @@ export const podcastsMetaCollection = createCollection(
 
         if (!podcast?.xmlUrl) return [];
 
-        const feed = await getFeed(podcast.xmlUrl).run();
+        const feed = await parseFeedUrl(podcast.xmlUrl);
 
         return [{ ...feed, podcastId }];
       },
     }),
-  }),
+  })
 );

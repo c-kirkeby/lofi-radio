@@ -1,23 +1,5 @@
-import { extract, type FeedData, type FeedEntry } from "@extractus/feed-extractor";
+import { parseRssFeed, type Rss } from 'feedsmith'
 import DOMPurify from "dompurify";
-
-type FeedExtras = {
-  image?: string;
-  owner?: string;
-  author?: string;
-  categories: string[];
-};
-
-type EntryExtras = {
-  url?: string;
-  type?: string;
-  length?: string;
-  duration?: string;
-  image?: string;
-};
-
-export type Feed = FeedData & { id: string; text: string } & FeedExtras;
-export type Entry = FeedEntry & EntryExtras;
 
 const PURIFY_OPTS = {
   ALLOWED_TAGS: ["p", "a"],
@@ -30,55 +12,57 @@ export function sanitiseDescription(raw: string): { html: string; text: string }
   return { html, text };
 }
 
-type RawFeedData = {
-  "itunes:image"?: { href?: string };
-  image?: { url?: string };
-  "itunes:author"?: string;
-  "itunes:category"?: { "@_text"?: string } | { "@_text"?: string }[];
-  "itunes:owner"?: { "itunes:name"?: string };
-};
+export async function fetchFeed(rssUrl: string) {
+  const response = await fetch(`${window.location.origin}/api/proxy?url=${encodeURIComponent(rssUrl)}`)
 
-type RawEntryData = {
-  enclosure?: { "@_url"?: string; "@_type"?: string; "@_length"?: string };
-  "itunes:duration"?: string;
-  "itunes:image"?: {
-    "@_href"?: string;
-  };
-};
+  const xml = await response.text();
 
-const xmlParserOptions = {
-  processEntities: { maxTotalExpansions: Infinity },
-  ignoreAttributes: false,
-  attributeNamePrefix: "@_",
-};
+  return parseRssFeed(xml)
+}
 
-export async function parseFeed(rssUrl: string) {
-  const result = await extract(rssUrl, {
-    xmlParserOptions,
-    getExtraFeedFields(feedData: RawFeedData) {
-      const image = feedData["itunes:image"]?.href ?? feedData.image?.url;
-      const author = feedData["itunes:author"];
-      const owner = feedData["itunes:owner"]?.["itunes:name"];
-      const raw = feedData["itunes:category"];
-      const rawArr = raw == null ? [] : Array.isArray(raw) ? raw : [raw];
-      const categories = Array.from(
-        new Set(rawArr.map((c) => c["@_text"]).filter((t): t is string => t != null)),
-      );
+export type Entry = {
+  id?: string;
+  url?: string;
+  title?: string;
+  image?: string;
+  published?: string;
+  duration?: number;
+  description?: string;
+}
 
-      return { image, owner, author, categories } satisfies FeedExtras;
-    },
-    getExtraEntryFields(entryData: RawEntryData) {
-      const { enclosure, "itunes:duration": duration, "itunes:image": image } = entryData;
+export function parseFeed(rss: Rss.Feed<string>) {
+  const categories = (rss.categories?.map(category => category.name) ?? rss.itunes?.categories?.map(category => category.text))?.filter(
+    (category): category is string => typeof category === "string"
+  )
+  return {
+    link: rss.link,
+    title: rss.title,
+    description: rss.description,
+    generator: rss.generator,
+    language: rss.language,
+    published: rss.pubDate,
+    image: rss.itunes?.image ?? rss.image?.url,
+    owner: rss.itunes?.owner?.name,
+    author: rss.itunes?.author,
+    categories,
+    entries: rss.items?.map(
+      item => ({
+        id: item.guid?.value,
+        link: item.link,
+        url: item.enclosures?.[0].url,
+        title: item.title,
+        type: item.enclosures?.[0].type,
+        length: item.enclosures?.[0].length,
+        duration: item.itunes?.duration,
+        image: item.itunes?.image,
+        published: item.pubDate,
+        description: item.description,
+      })
+    ),
+  }
+}
 
-      return {
-        url: enclosure?.["@_url"],
-        type: enclosure?.["@_type"],
-        length: enclosure?.["@_length"],
-        image: image?.["@_href"],
-        duration,
-      } satisfies EntryExtras;
-    },
-  });
-
-  return result;
+export async function parseFeedUrl(rssUrl: string) {
+  const rss = await fetchFeed(rssUrl);
+  return parseFeed(rss);
 }
