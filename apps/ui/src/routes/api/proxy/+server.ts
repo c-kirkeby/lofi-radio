@@ -43,6 +43,7 @@ export const GET: RequestHandler = async ({ url, request }) => {
     const responseHeaders = new Headers(response.headers);
 
     responseHeaders.delete("content-encoding");
+    responseHeaders.delete("content-length");
     responseHeaders.delete("transfer-encoding");
     responseHeaders.delete("access-control-allow-headers");
     responseHeaders.delete("access-control-allow-origin");
