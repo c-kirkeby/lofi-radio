@@ -9,8 +9,8 @@
     "preview": "vp preview"
   },
   "devDependencies": {
-    "typescript": "~6.0.2",
-    "vite": "catalog:",
+    "typescript": "~6.0.3",
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vite-plus": "catalog:"
   }
 }

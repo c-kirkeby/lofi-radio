@@ -1,4 +1,4 @@
-import { parseRssFeed, type Rss } from 'feedsmith'
+import { parseRssFeed, type Rss } from "feedsmith";
 import DOMPurify from "dompurify";
 
 const PURIFY_OPTS = {
@@ -13,11 +13,13 @@ export function sanitiseDescription(raw: string): { html: string; text: string }
 }
 
 export async function fetchFeed(rssUrl: string) {
-  const response = await fetch(`${window.location.origin}/api/proxy?url=${encodeURIComponent(rssUrl)}`)
+  const response = await fetch(
+    `${window.location.origin}/api/proxy?url=${encodeURIComponent(rssUrl)}`,
+  );
 
   const xml = await response.text();
 
-  return parseRssFeed(xml)
+  return parseRssFeed(xml);
 }
 
 export type Entry = {
@@ -28,12 +30,13 @@ export type Entry = {
   published?: string;
   duration?: number;
   description?: string;
-}
+};
 
 export function parseFeed(rss: Rss.Feed<string>) {
-  const categories = (rss.categories?.map(category => category.name) ?? rss.itunes?.categories?.map(category => category.text))?.filter(
-    (category): category is string => typeof category === "string"
-  )
+  const categories = (
+    rss.categories?.map((category) => category.name) ??
+    rss.itunes?.categories?.map((category) => category.text)
+  )?.filter((category): category is string => typeof category === "string");
   return {
     link: rss.link,
     title: rss.title,
@@ -45,21 +48,19 @@ export function parseFeed(rss: Rss.Feed<string>) {
     owner: rss.itunes?.owner?.name,
     author: rss.itunes?.author,
     categories,
-    entries: rss.items?.map(
-      item => ({
-        id: item.guid?.value,
-        link: item.link,
-        url: item.enclosures?.[0].url,
-        title: item.title,
-        type: item.enclosures?.[0].type,
-        length: item.enclosures?.[0].length,
-        duration: item.itunes?.duration,
-        image: item.itunes?.image,
-        published: item.pubDate,
-        description: item.description,
-      })
-    ),
-  }
+    entries: rss.items?.map((item) => ({
+      id: item.guid?.value,
+      link: item.link,
+      url: item.enclosures?.[0].url,
+      title: item.title,
+      type: item.enclosures?.[0].type,
+      length: item.enclosures?.[0].length,
+      duration: item.itunes?.duration,
+      image: item.itunes?.image,
+      published: item.pubDate,
+      description: item.description,
+    })),
+  };
 }
 
 export async function parseFeedUrl(rssUrl: string) {

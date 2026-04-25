@@ -104,5 +104,5 @@ export const podcastsMetaCollection = createCollection(
         return [{ ...feed, podcastId }];
       },
     }),
-  })
+  }),
 );
