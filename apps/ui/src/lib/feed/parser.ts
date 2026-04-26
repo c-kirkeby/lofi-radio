@@ -17,6 +17,10 @@ export async function fetchFeed(rssUrl: string) {
     `${window.location.origin}/api/proxy?url=${encodeURIComponent(rssUrl)}`,
   );
 
+  if (!response.ok) {
+    throw new Error(`Failed to fetch feed: ${response.status} ${response.statusText}`);
+  }
+
   const xml = await response.text();
 
   return parseRssFeed(xml);

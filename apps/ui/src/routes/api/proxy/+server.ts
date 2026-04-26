@@ -56,6 +56,8 @@ export const GET: RequestHandler = async ({ url, request }) => {
     responseHeaders.set("accept-ranges", "bytes");
 
     return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
       headers: responseHeaders,
     });
   } catch (error) {
