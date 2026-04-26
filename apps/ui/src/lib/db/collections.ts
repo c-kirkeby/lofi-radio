@@ -14,6 +14,7 @@ import {
 import { QueryClient } from "@tanstack/query-core";
 import * as v from "valibot";
 import { parseFeedUrl } from "@/feed/parser";
+import { cacheImage, resizeImage } from "@/caches/image";
 
 const queryClient = new QueryClient();
 
@@ -124,6 +125,10 @@ async function getPodcastMeta(params: {
     pairs.map(async ({ podcastId, url }) => {
       try {
         const feed = await parseFeedUrl(url);
+        if (feed.image) {
+          const image = await resizeImage(feed.image);
+          await cacheImage(image, podcastId, "images");
+        }
         return {
           podcastId,
           ...feed,

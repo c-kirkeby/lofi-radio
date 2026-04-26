@@ -17,6 +17,7 @@ const self = globalThis.self as unknown as ServiceWorkerGlobalScope;
 
 // Create a unique cache name for this deployment
 const CACHE = `cache-${version}`;
+const IMAGE_CACHE = `image`;
 
 const ASSETS = [
   ...build, // the app itself
@@ -37,7 +38,9 @@ self.addEventListener("activate", (event) => {
   // Remove previous cached data from disk
   async function deleteOldCaches() {
     for (const key of await caches.keys()) {
-      if (key !== CACHE) await caches.delete(key);
+      if (key !== CACHE
+        && key !== IMAGE_CACHE
+      ) await caches.delete(key);
     }
   }
 
@@ -59,6 +62,16 @@ self.addEventListener("fetch", (event) => {
       if (response) {
         return response;
       }
+    }
+
+    const cacheMatch = await caches.match(event.request.url);
+    if (cacheMatch) {
+      return cacheMatch;
+    }
+
+    const responseFromCache = await caches.match(url.href);
+    if (responseFromCache) {
+      return responseFromCache;
     }
 
     // for everything else, try the network first, but

@@ -20,7 +20,7 @@
       <AspectRatio ratio={1 / 1}>
         {#if podcast.podcastsMeta?.[0]?.image}
           <img
-            src={podcast.podcastsMeta[0].image}
+            src={`/image/${podcast.id}.png`}
             alt={podcast.podcastsMeta[0].title ?? podcast.text}
             class="size-full object-cover"
             style:view-transition-name={`podcast-${podcast.id}`}
