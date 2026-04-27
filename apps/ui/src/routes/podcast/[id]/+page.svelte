@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { parseDuration } from "$lib/feeds";
-  import { sanitiseDescription, type Entry } from "$lib/feed/parser";
+  import { sanitiseDescription } from "$lib/feed/parser";
   import { player } from "$lib/state/player.svelte";
   import { Skeleton } from "@/components/ui/skeleton";
   import { Button } from "@/components/ui/button";
@@ -16,8 +16,8 @@
   } from "@/components/ui/item";
   import { Play, Mic, Link } from "@lucide/svelte";
   import ItemSeparator from "@/components/ui/item/item-separator.svelte";
-  import { eq, useLiveQuery } from "@tanstack/svelte-db";
-  import { podcastsMetaCollection } from "@/db/collections";
+  import { eq, useLiveQuery, toArray } from "@tanstack/svelte-db";
+  import { podcastsMetaCollection, episodesCollection } from "@/db/collections";
   import { WindowVirtualizer } from "virtua/svelte";
 
   const DESCRIPTION_LIMIT = 100;
@@ -28,29 +28,47 @@
     q
       .from({ podcastMeta: podcastsMetaCollection })
       .where(({ podcastMeta }) => eq(podcastMeta.podcastId, id))
-      .select(({ podcastMeta }) => podcastMeta),
+      .select(({ podcastMeta }) => ({
+        podcastMeta,
+        episodes: toArray(
+          q
+            .from({ episodes: episodesCollection })
+            .where(({ episodes }) =>
+              eq(episodes.podcastId, podcastMeta.podcastId),
+            )
+            .orderBy(({ episodes }) => episodes.published, "desc")
+            .select(({ episodes }) => ({
+              title: episodes.title,
+              url: episodes.url,
+              published: episodes.published,
+              duration: episodes.duration,
+              image: episodes.image,
+            })),
+        ),
+      })),
   );
 
-  const feed = $derived(query.data?.[0]);
-  const feedEntries = $derived((feed?.entries ?? []) as Entry[]);
-
-  const sanitised = $derived(
-    feed?.description ? sanitiseDescription(feed.description) : null,
-  );
-  const descriptionTruncated = $derived(
-    !!sanitised?.text && sanitised.text.length > DESCRIPTION_LIMIT,
-  );
   let descriptionExpanded = $state(false);
 
-  function playEpisode(entry: Entry) {
-    if (!entry.url || !feed?.title || !feed.image || !entry.title) return;
+  function playEpisode(entry: {
+    url?: string;
+    title?: string;
+    image?: string;
+  }) {
+    if (
+      !entry.url ||
+      !query.data[0]?.podcastMeta?.title ||
+      !query.data[0]?.podcastMeta?.image ||
+      !entry.title
+    )
+      return;
 
     player.load({
       src: entry.url,
       title: entry.title,
-      show: feed.title,
-      id: feed.podcastId,
-      image: entry.image ?? feed.image,
+      show: query.data[0]?.podcastMeta?.title,
+      id: query.data[0]?.podcastMeta?.podcastId,
+      image: entry.image ?? query.data[0]?.podcastMeta?.image,
     });
   }
 
@@ -74,7 +92,6 @@
     } else if (diffHours < 24) {
       return rtf.format(-diffHours, "hour");
     } else {
-      // Check if the date was "yesterday" (any time in the previous calendar day)
       const parts = rtf.formatToParts(-1, "day");
       const yesterdayLiteral = parts.map((p) => p.value).join("");
 
@@ -97,66 +114,66 @@
   }
 </script>
 
-<div class="min-h-screen p-2 pb-24 mx-auto container max-w-8xl overflow-hidden">
-  {#if !feed}
-    <!-- Header skeleton -->
-    <div class="flex flex-col items-center md:items-start md:flex-row gap-8 mb-8 py-4 px-3">
-      <Skeleton class="size-32 md:size-48 rounded-xl shrink-0" />
-      <div class="flex flex-col gap-2 justify-start w-full">
-        <!-- Title: centered on mobile, left on md+ -->
-        <Skeleton class="h-8 w-2/3 mx-auto md:mx-0" />
-        <!-- Categories: hidden on mobile -->
-        <div class="hidden md:flex flex-row gap-2">
-          <Skeleton class="h-5 w-16 rounded-full" />
-          <Skeleton class="h-5 w-20 rounded-full" />
-        </div>
-        <!-- Author / link: stacked on mobile, row on md+ -->
-        <div class="flex flex-col md:flex-row items-center md:items-start gap-1.5">
-          <Skeleton class="h-4 w-28" />
-          <Skeleton class="h-4 w-40" />
-        </div>
-        <!-- Description -->
-        <div class="flex flex-col gap-1.5 mt-1">
-          <Skeleton class="h-3.5 w-full" />
-          <Skeleton class="h-3.5 w-full" />
-          <Skeleton class="h-3.5 w-5/6" />
-          <Skeleton class="h-3.5 w-4/6" />
-        </div>
-      </div>
+<!-- Header skeleton -->
+{#if query.isLoading}
+<div class="flex flex-col items-center md:items-start md:flex-row gap-8 mb-8 py-4 px-3">
+  <Skeleton class="size-32 md:size-48 rounded-xl shrink-0" />
+  <div class="flex flex-col gap-2 justify-start w-full">
+    <!-- Title: centered on mobile, left on md+ -->
+    <Skeleton class="h-8 w-2/3 mx-auto md:mx-0" />
+    <!-- Categories: hidden on mobile -->
+    <div class="hidden md:flex flex-row gap-2">
+      <Skeleton class="h-5 w-16 rounded-full" />
+      <Skeleton class="h-5 w-20 rounded-full" />
     </div>
-    <!-- Episode list skeleton -->
-    {#each { length: 8 } as _, i (i)}
-      <div class="flex items-center gap-2 py-3 border-b px-3">
-        <div class="flex-1 grid md:grid-cols-5 gap-1.5 items-center">
-          <!-- date: shown above title on mobile, hidden on md -->
-          <Skeleton class="h-3 w-20 md:hidden" />
-          <!-- title spans 3 cols on md -->
-          <Skeleton class="h-4 w-3/4 md:col-span-3" />
-          <!-- date: hidden on mobile, col 4 on md -->
-          <Skeleton class="hidden md:block h-3 w-20" />
-          <!-- duration -->
-          <Skeleton class="h-3 w-12" />
-        </div>
-        <!-- play button -->
-        <Skeleton class="size-9 rounded-md shrink-0" />
-      </div>
-    {/each}
-  {/if}
-
-  <div
-    class="flex flex-col items-center md:items-start md:flex-row gap-8 mb-8 py-4 px-3"
-  >
-    {#if feed?.image}
+    <!-- Author / link: stacked on mobile, row on md+ -->
+    <div class="flex flex-col md:flex-row items-center md:items-start gap-1.5">
+      <Skeleton class="h-4 w-28" />
+      <Skeleton class="h-4 w-40" />
+    </div>
+    <!-- Description -->
+    <div class="flex flex-col gap-1.5 mt-1">
+      <Skeleton class="h-3.5 w-full" />
+      <Skeleton class="h-3.5 w-full" />
+      <Skeleton class="h-3.5 w-5/6" />
+      <Skeleton class="h-3.5 w-4/6" />
+    </div>
+  </div>
+</div>
+<!-- Episode list skeleton -->
+{#each { length: 8 } as _, i (i)}
+  <div class="flex items-center gap-2 py-3 border-b px-3">
+    <div class="flex-1 grid md:grid-cols-5 gap-1.5 items-center">
+      <!-- date: shown above title on mobile, hidden on md -->
+      <Skeleton class="h-3 w-20 md:hidden" />
+      <!-- title spans 3 cols on md -->
+      <Skeleton class="h-4 w-3/4 md:col-span-3" />
+      <!-- date: hidden on mobile, col 4 on md -->
+      <Skeleton class="hidden md:block h-3 w-20" />
+      <!-- duration -->
+      <Skeleton class="h-3 w-12" />
+    </div>
+    <!-- play button -->
+    <Skeleton class="size-9 rounded-md shrink-0" />
+  </div>
+{/each}
+{:else if query.data.length > 0}
+  {@const sanitised = sanitiseDescription(
+    query.data[0].podcastMeta?.description ?? "",
+  )}
+  {@const descriptionTruncated = sanitised.text.length > DESCRIPTION_LIMIT}
+  <div class="flex flex-col items-center md:items-start md:flex-row gap-8 mb-8">
+    {#if query.data[0].podcastMeta?.image}
       <div class="relative shrink-0">
         <div
-          style="--background-image: url({`/image/${feed.podcastId}.png`})"
+          style="--background-image: url({`/image/${query.data[0].podcastMeta.podcastId}.png`})"
           class="bg-(image:--background-image) absolute bg-cover -z-10 inset-1 scale-200 rotate-45 blur-3xl md:hidden"
         ></div>
         <img
-          src={`/image/${feed.podcastId}.png`}
-          alt={feed.title}
+          src={`/image/${query.data[0].podcastMeta.podcastId}.png`}
+          alt={query.data[0].podcastMeta.title}
           class="size-32 rounded-xl object-cover md:size-48"
-          style:view-transition-name={`podcast-${feed.podcastId}`}
+          style:view-transition-name={`podcast-${query.data[0].podcastMeta.podcastId}`}
         />
       </div>
     {/if}
@@ -166,11 +183,11 @@
       <h1
         class="text-2xl font-semibold tracking-tight text-center md:text-start"
       >
-        {feed?.title}
+        {query.data[0].podcastMeta.title}
       </h1>
-      {#if feed?.categories?.length}
+      {#if query.data[0].podcastMeta.categories?.length}
         <div class="hidden md:flex flex-row gap-2">
-          {#each feed.categories as category (category)}
+          {#each query.data[0].podcastMeta.categories as category (category)}
             <Badge variant="secondary">{category}</Badge>
           {/each}
         </div>
@@ -178,21 +195,23 @@
       <div
         class="flex flex-col md:flex-row font-bold flex-wrap justify-center md:justify-start items-center md:items-start gap-x-3 gap-y-1.5 text-sm text-muted-foreground min-w-0"
       >
-        {#if feed?.author}
-          <span class="flex items-center gap-1.5 min-w-0">
+        {#if query.data[0].podcastMeta.author}
+          <span class="flex items-center gap-1.5">
             <Mic class="size-3.5 shrink-0" />
-            <span class="truncate">{feed.author}</span>
+            <span class="truncate">{query.data[0].podcastMeta.author}</span>
           </span>
         {/if}
-        {#if feed?.link}
+        {#if query.data[0].podcastMeta.link}
           <a
-            href={feed.link}
+            href={query.data[0].podcastMeta.link}
             target="_blank"
             rel="noopener noreferrer"
             class="hover:text-foreground flex items-center gap-1.5 transition-colors min-w-0"
           >
             <Link class="size-3.5 shrink-0" />
-            <span class="truncate text-foreground">{feed.link}</span>
+            <span class="truncate text-foreground"
+              >{query.data[0].podcastMeta.link}</span
+            >
           </a>
         {/if}
       </div>
@@ -222,7 +241,7 @@
   </div>
 
   <ItemGroup>
-    <WindowVirtualizer data={feedEntries}>
+    <WindowVirtualizer data={query.data[0].episodes}>
       {#snippet children(entry, index)}
         {@const duration = parseDuration(entry.duration)}
         <Item>
@@ -251,10 +270,10 @@
             </Button>
           </ItemActions>
         </Item>
-        {#if index !== (feedEntries?.length ?? 0) - 1}
+        {#if index !== (query.data[0].episodes?.length ?? 0) - 1}
           <ItemSeparator />
         {/if}
       {/snippet}
     </WindowVirtualizer>
   </ItemGroup>
-</div>
+{/if}
