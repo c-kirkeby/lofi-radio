@@ -24,10 +24,13 @@
         event.preventDefault();
         player.close();
         break;
-      case " ":
+      case " ": {
+        const target = event.target as HTMLElement;
+        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable) break;
         event.preventDefault();
         player.playpause();
         break;
+      }
     }
   }}
 />
