@@ -37,14 +37,11 @@ export type Entry = {
 };
 
 export function parseFeed(rss: Rss.Feed<string>) {
-  const categories = [
-    ...new Set(
-      (
-        rss.categories?.map((category) => category.name) ??
-        rss.itunes?.categories?.map((category) => category.text)
-      )?.filter((category): category is string => typeof category === "string"),
-    ),
-  ];
+  let categories = (
+    rss.categories?.map((category) => category.name) ??
+    rss.itunes?.categories?.map((category) => category.text)
+  )?.filter((category): category is string => typeof category === "string");
+  categories = [...new Set(categories ?? [])]; // Nested categories get collapsed, so we need to dedupe them.
   return {
     link: rss.link,
     title: rss.title,
