@@ -1,5 +1,13 @@
-import { createCollection } from "@tanstack/svelte-db";
-import { queryCollectionOptions, parseLoadSubsetOptions } from "@tanstack/query-db-collection";
+import {
+  BasicIndex,
+  createCollection,
+  type ParsedOrderBy,
+  type SimpleComparison,
+} from "@tanstack/svelte-db";
+import {
+  queryCollectionOptions,
+  parseLoadSubsetOptions,
+} from "@tanstack/query-db-collection";
 import {
   createBrowserWASQLitePersistence,
   persistedCollectionOptions,
@@ -83,26 +91,52 @@ export const podcastsMetaCollection = createCollection(
       queryClient,
       staleTime: 12 * 60 * 60 * 1000, // 12 hours
       syncMode: "on-demand",
+      autoIndex: 'eager',
+      defaultIndexType: BasicIndex,
       getKey: (podcastMeta) => podcastMeta.podcastId,
       queryFn: async (ctx) => {
-        const { limit, where, orderBy } = ctx.meta?.loadSubsetOptions ?? {};
-        const { filters } = parseLoadSubsetOptions({ where, orderBy, limit });
+        const params = parseLoadSubsetOptions(ctx.meta?.loadSubsetOptions);
 
-        const podcastIdFilter = filters.find(
-          (f) => f.field.join(".") === "podcastId" && f.operator === "eq",
-        );
-
-        if (!podcastIdFilter) return [];
-
-        const podcastId = podcastIdFilter.value as string;
-        const podcast = podcastsCollection.get(podcastId);
-
-        if (!podcast?.xmlUrl) return [];
-
-        const feed = await parseFeedUrl(podcast.xmlUrl);
-
-        return [{ ...feed, podcastId }];
+        return getPodcastMeta(params);
       },
     }),
-  }),
+  })
 );
+
+async function getPodcastMeta(params: {
+  filters: Array<SimpleComparison>;
+  sorts: Array<ParsedOrderBy>;
+  limit?: number;
+}): Promise<PodcastMetaInput[]> {
+  const { filters } = params;
+
+  let pairs: { podcastId: string, url: string }[] = [];
+
+  filters.forEach(({ field, operator, value }) => {
+    if (field.includes('podcastId') && operator === 'in' && Array.isArray(value)) {
+      value.forEach((podcastId) => {
+        const podcast = podcastsCollection.get(podcastId)
+        if (podcast?.xmlUrl) {
+          pairs.push({ podcastId, url: podcast.xmlUrl });
+        }
+      })
+    }
+  })
+
+  const results = await Promise.all(
+    pairs.map(async ({ podcastId, url }) => {
+      try {
+        const feed = await parseFeedUrl(url);
+        return {
+          podcastId,
+          ...feed
+        };
+      } catch (error) {
+        console.error(`Failed to fetch or parse feed for podcast ${podcastId}:`, error);
+        return null;
+      }
+    })
+  );
+
+  return results.filter((result) => result !== null);
+}

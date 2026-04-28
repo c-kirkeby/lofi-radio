@@ -7,8 +7,8 @@
   import * as Card from "@/components/ui/card";
   import { AspectRatio } from "@/components/ui/aspect-ratio";
   import { Skeleton } from "@/components/ui/skeleton";
-  import { podcastsCollection } from "@/db/collections";
-  import { useLiveQuery } from "@tanstack/svelte-db";
+  import { podcastsCollection, podcastsMetaCollection } from "@/db/collections";
+  import { eq, toArray, useLiveQuery } from "@tanstack/svelte-db";
   import { parseOpml } from "feedsmith";
 
   const outlineSchema = v.object({
@@ -18,7 +18,20 @@
   });
   type Outline = v.InferInput<typeof outlineSchema>;
 
-  const query = useLiveQuery((q) => q.from({ podcasts: podcastsCollection }));
+  const query = useLiveQuery((q) =>
+    q.from({ podcasts: podcastsCollection }).select(({ podcasts }) => ({
+      ...podcasts,
+      podcastsMeta: toArray(
+        q
+          .from({ podcastsMeta: podcastsMetaCollection })
+          .where(({ podcastsMeta }) => eq(podcastsMeta.podcastId, podcasts.id))
+          .select(({ podcastsMeta }) => ({
+            image: podcastsMeta.image,
+            title: podcastsMeta.title,
+          })),
+      ),
+    })),
+  );
 
   async function handleImport(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -46,7 +59,7 @@
 
 <div class="min-h-screen p-6 pb-24 mx-auto container">
   <h1 class="mb-6 text-2xl font-semibold tracking-tight">Podcasts</h1>
-  {#if query.isLoading}
+  {#if query.isLoading && !query.data}
     {#each { length: 12 } as _, i (i)}
       <Card.Root class="py-0 overflow-hidden">
         <Card.Content class="px-0">

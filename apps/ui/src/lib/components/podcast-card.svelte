@@ -4,19 +4,12 @@
   import { Skeleton } from "@/components/ui/skeleton";
 
   import { resolve } from "$app/paths";
-  import { eq, useLiveQuery } from "@tanstack/svelte-db";
-  import { podcastsMetaCollection, type PodcastInput } from "@/db/collections";
+  import { type PodcastInput, type PodcastMetaInput } from "@/db/collections";
 
-  let { podcast }: { podcast: PodcastInput } = $props();
-
-  const query = useLiveQuery((q) =>
-    q
-      .from({ podcastMeta: podcastsMetaCollection })
-      .where(({ podcastMeta }) => eq(podcastMeta.podcastId, podcast.id))
-      .select(({ podcastMeta }) => podcastMeta),
-  );
-
-  const feed = $derived(query.data?.[0]);
+  let {
+    podcast,
+  }: { podcast: PodcastInput & { podcastsMeta: PodcastMetaInput[] } } =
+    $props();
 </script>
 
 <a href={resolve(`/podcast/${podcast.id}`)} class="block">
@@ -25,10 +18,10 @@
   >
     <Card.Content class="px-0" style="border-radius: inherit">
       <AspectRatio ratio={1 / 1}>
-        {#if feed?.image}
+        {#if podcast.podcastsMeta?.[0]?.image}
           <img
-            src={feed.image}
-            alt={feed.title ?? podcast.text}
+            src={podcast.podcastsMeta[0].image}
+            alt={podcast.podcastsMeta[0].title ?? podcast.text}
             class="size-full object-cover"
             style:view-transition-name={`podcast-${podcast.id}`}
           />
