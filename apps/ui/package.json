@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "deploy": "vp build && wrangler deploy",
+    "cf-preview": "vp build && wrangler dev",
+    "cf-typegen": "wrangler types",
     "dev": "vp dev",
     "build": "vp build",
     "preview": "vp preview",
@@ -45,6 +48,7 @@
     "tw-animate-css": "catalog:",
     "typescript": "^6.0.3",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "wrangler": "catalog:"
   }
 }

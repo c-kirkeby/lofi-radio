@@ -37,11 +37,15 @@ catalog:
   vite: npm:@voidzero-dev/vite-plus-core@latest
   vite-plus: ^0.1.19
   vitest: npm:@voidzero-dev/vite-plus-test@latest
+  wrangler: ^4.86.0
 
 catalogMode: prefer
 onlyBuiltDependencies:
   - "@journeyapps/wa-sqlite"
   - "@tailwindcss/oxide"
+  - esbuild
+  - sharp
+  - workerd
 overrides:
   vite: "catalog:"
   vitest: "catalog:"
