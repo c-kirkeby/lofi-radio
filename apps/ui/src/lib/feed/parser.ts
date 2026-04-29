@@ -23,7 +23,9 @@ export async function fetchFeed(rssUrl: string) {
 
   const xml = await response.text();
 
-  return parseRssFeed(xml);
+  return parseRssFeed(xml, {
+    parseDateFn: (raw) => new Date(raw),
+  });
 }
 
 export type Entry = {
@@ -31,12 +33,12 @@ export type Entry = {
   url?: string;
   title?: string;
   image?: string;
-  published?: string;
+  published?: Date;
   duration?: number;
   description?: string;
 };
 
-export function parseFeed(rss: Rss.Feed<string>) {
+export function parseFeed(rss: Rss.Feed<Date>) {
   let categories = (
     rss.categories?.map((category) => category.name) ??
     rss.itunes?.categories?.map((category) => category.text)

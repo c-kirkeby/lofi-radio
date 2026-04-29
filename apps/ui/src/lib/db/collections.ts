@@ -58,7 +58,7 @@ const EpisodeSchema = v.object({
   length: v.optional(v.number()),
   duration: v.optional(v.number()),
   image: v.optional(v.string()),
-  published: v.optional(v.string()),
+  published: v.optional(v.date()),
   description: v.optional(v.string()),
 });
 
@@ -69,7 +69,7 @@ export const episodesCollection = createCollection(
     id: "episodes",
     persistence,
     defaultIndexType: BasicIndex,
-    autoIndex: 'eager',
+    autoIndex: "eager",
     getKey: (episode) => episode.url,
     schemaVersion: 1,
   }),
@@ -84,7 +84,7 @@ const PodcastMetaSchema = v.object({
   description: v.optional(v.string()),
   generator: v.optional(v.string()),
   language: v.optional(v.string()),
-  published: v.optional(v.string()),
+  published: v.optional(v.date()),
   image: v.optional(v.string()),
   owner: v.optional(v.string()),
   author: v.optional(v.string()),
@@ -98,7 +98,7 @@ export const podcastsMetaCollection = createCollection(
     id: "podcasts-meta",
     persistence,
     defaultIndexType: BasicIndex,
-    autoIndex: 'eager',
+    autoIndex: "eager",
     schemaVersion: 1,
     ...queryCollectionOptions({
       queryKey: ["podcasts-meta"],
@@ -139,7 +139,6 @@ async function getPodcastMeta(params: {
   const results = await Promise.all(
     pairs.map(async ({ podcastId, url }) => {
       try {
-
         const feed = await parseFeedUrl(url);
         if (feed.image) {
           const image = await resizeImage(feed.image);
@@ -149,8 +148,12 @@ async function getPodcastMeta(params: {
 
         if (entries?.length) {
           const episodes: EpisodeInput[] = entries
-            .filter((entry): entry is typeof entry & { url: string } => !!entry.url && !episodesCollection.has(entry.url))
-            .filter((entry, index, self) => index === self.findIndex(e => e.url === entry.url)) // Remove duplicates
+            .filter(
+              (entry): entry is typeof entry & { url: string } =>
+                !!entry.url && !episodesCollection.has(entry.url),
+            )
+            .filter((entry, index, self) => index === self.findIndex((e) => e.url === entry.url)) // Remove duplicates
+            .sort((a, b) => (b.published?.getTime() ?? 0) - (a.published?.getTime() ?? 0))
             .map((entry) => ({
               podcastId,
               link: entry.link,
@@ -162,7 +165,7 @@ async function getPodcastMeta(params: {
               image: entry.image,
               published: entry.published,
               description: entry.description,
-            }))
+            }));
 
           episodesCollection.insert(episodes);
         }
@@ -170,6 +173,7 @@ async function getPodcastMeta(params: {
         return {
           podcastId,
           ...feed,
+          ...meta
         };
       } catch (error) {
         console.error(`Failed to fetch or parse feed for podcast ${podcastId}:`, error);
