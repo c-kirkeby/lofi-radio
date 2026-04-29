@@ -9,6 +9,7 @@ catalog:
   "@humanspeak/svelte-virtual-list": ^0.4.6
   "@internationalized/date": ^3.12.1
   "@lucide/svelte": ^1.11.0
+  '@sveltejs/adapter-cloudflare': ^7.2.8
   "@sveltejs/kit": latest
   "@tanstack/browser-db-sqlite-persistence": ^0.1.9
   "@tanstack/db": ^0.6.5

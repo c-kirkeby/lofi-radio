@@ -34,6 +34,7 @@
     "@internationalized/date": "catalog:",
     "@lucide/svelte": "^1.11.0",
     "@sveltejs/adapter-auto": "latest",
+    "@sveltejs/adapter-cloudflare": "catalog:",
     "@sveltejs/kit": "catalog:",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/vite": "^4.2.4",
