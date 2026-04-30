@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-cloudflare'
+import adapter from "@sveltejs/adapter-cloudflare";
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -21,13 +21,13 @@ const config = {
       platformProxy: {
         configPath: undefined,
         environment: undefined,
-        persist: undefined
+        persist: undefined,
       },
-      fallback: 'plaintext',
+      fallback: "plaintext",
       routes: {
-        include: ['/*'],
-        exclude: ['<all>']
-      }
+        include: ["/*"],
+        exclude: ["<all>"],
+      },
     }),
     alias: {
       "@/*": "src/lib",

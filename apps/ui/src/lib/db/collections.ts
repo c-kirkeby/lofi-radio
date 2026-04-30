@@ -4,10 +4,7 @@ import {
   type ParsedOrderBy,
   type SimpleComparison,
 } from "@tanstack/svelte-db";
-import {
-  queryCollectionOptions,
-  parseLoadSubsetOptions,
-} from "@tanstack/query-db-collection";
+import { queryCollectionOptions, parseLoadSubsetOptions } from "@tanstack/query-db-collection";
 import {
   createBrowserWASQLitePersistence,
   persistedCollectionOptions,
@@ -91,7 +88,7 @@ export const podcastsMetaCollection = createCollection(
       queryClient,
       staleTime: 12 * 60 * 60 * 1000, // 12 hours
       syncMode: "on-demand",
-      autoIndex: 'eager',
+      autoIndex: "eager",
       defaultIndexType: BasicIndex,
       getKey: (podcastMeta) => podcastMeta.podcastId,
       queryFn: async (ctx) => {
@@ -100,7 +97,7 @@ export const podcastsMetaCollection = createCollection(
         return getPodcastMeta(params);
       },
     }),
-  })
+  }),
 );
 
 async function getPodcastMeta(params: {
@@ -110,18 +107,18 @@ async function getPodcastMeta(params: {
 }): Promise<PodcastMetaInput[]> {
   const { filters } = params;
 
-  let pairs: { podcastId: string, url: string }[] = [];
+  let pairs: { podcastId: string; url: string }[] = [];
 
   filters.forEach(({ field, operator, value }) => {
-    if (field.includes('podcastId') && operator === 'in' && Array.isArray(value)) {
+    if (field.includes("podcastId") && operator === "in" && Array.isArray(value)) {
       value.forEach((podcastId) => {
-        const podcast = podcastsCollection.get(podcastId)
+        const podcast = podcastsCollection.get(podcastId);
         if (podcast?.xmlUrl) {
           pairs.push({ podcastId, url: podcast.xmlUrl });
         }
-      })
+      });
     }
-  })
+  });
 
   const results = await Promise.all(
     pairs.map(async ({ podcastId, url }) => {
@@ -129,13 +126,13 @@ async function getPodcastMeta(params: {
         const feed = await parseFeedUrl(url);
         return {
           podcastId,
-          ...feed
+          ...feed,
         };
       } catch (error) {
         console.error(`Failed to fetch or parse feed for podcast ${podcastId}:`, error);
         return null;
       }
-    })
+    }),
   );
 
   return results.filter((result) => result !== null);
