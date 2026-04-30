@@ -99,27 +99,46 @@
 
 <div class="min-h-screen p-2 pb-24 mx-auto container max-w-8xl overflow-hidden">
   {#if !feed}
-    <div class="flex gap-8 mb-8">
-      <Skeleton class="size-48 rounded-xl shrink-0" />
-      <div class="flex flex-col gap-3 justify-start pt-1 flex-1">
-        <Skeleton class="h-8 w-2/3" />
-        <Skeleton class="h-4 w-1/3" />
-        <Skeleton class="h-4 w-1/2" />
-        <Skeleton class="h-16 w-full mt-2" />
-        <div class="flex gap-2 mt-1">
+    <!-- Header skeleton -->
+    <div class="flex flex-col items-center md:items-start md:flex-row gap-8 mb-8 py-4 px-3">
+      <Skeleton class="size-32 md:size-48 rounded-xl shrink-0" />
+      <div class="flex flex-col gap-2 justify-start w-full">
+        <!-- Title: centered on mobile, left on md+ -->
+        <Skeleton class="h-8 w-2/3 mx-auto md:mx-0" />
+        <!-- Categories: hidden on mobile -->
+        <div class="hidden md:flex flex-row gap-2">
           <Skeleton class="h-5 w-16 rounded-full" />
           <Skeleton class="h-5 w-20 rounded-full" />
+        </div>
+        <!-- Author / link: stacked on mobile, row on md+ -->
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-1.5">
+          <Skeleton class="h-4 w-28" />
+          <Skeleton class="h-4 w-40" />
+        </div>
+        <!-- Description -->
+        <div class="flex flex-col gap-1.5 mt-1">
+          <Skeleton class="h-3.5 w-full" />
+          <Skeleton class="h-3.5 w-full" />
+          <Skeleton class="h-3.5 w-5/6" />
+          <Skeleton class="h-3.5 w-4/6" />
         </div>
       </div>
     </div>
     <!-- Episode list skeleton -->
     {#each { length: 8 } as _, i (i)}
-      <div class="flex items-center gap-4 py-4 border-b">
-        <div class="flex-1 flex flex-col gap-2">
-          <Skeleton class="h-4 w-3/4" />
-          <Skeleton class="h-3 w-1/4" />
+      <div class="flex items-center gap-2 py-3 border-b px-3">
+        <div class="flex-1 grid md:grid-cols-5 gap-1.5 items-center">
+          <!-- date: shown above title on mobile, hidden on md -->
+          <Skeleton class="h-3 w-20 md:hidden" />
+          <!-- title spans 3 cols on md -->
+          <Skeleton class="h-4 w-3/4 md:col-span-3" />
+          <!-- date: hidden on mobile, col 4 on md -->
+          <Skeleton class="hidden md:block h-3 w-20" />
+          <!-- duration -->
+          <Skeleton class="h-3 w-12" />
         </div>
-        <Skeleton class="h-8 w-16" />
+        <!-- play button -->
+        <Skeleton class="size-9 rounded-md shrink-0" />
       </div>
     {/each}
   {/if}
