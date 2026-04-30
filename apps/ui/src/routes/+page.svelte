@@ -57,7 +57,7 @@
   }
 </script>
 
-<div class="min-h-screen p-6 pb-24 mx-auto container">
+<div class="min-h-screen p-4 pb-24 mx-auto container">
   <h1 class="mb-6 text-2xl font-semibold tracking-tight">Podcasts</h1>
   {#if query.isLoading && !query.data}
     {#each { length: 12 } as _, i (i)}

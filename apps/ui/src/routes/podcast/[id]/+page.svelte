@@ -97,7 +97,7 @@
   }
 </script>
 
-<div class="min-h-screen p-6 pb-24 mx-auto container max-w-8xl">
+<div class="min-h-screen p-2 pb-24 mx-auto container max-w-8xl overflow-hidden">
   {#if !feed}
     <div class="flex gap-8 mb-8">
       <Skeleton class="size-48 rounded-xl shrink-0" />
@@ -124,7 +124,9 @@
     {/each}
   {/if}
 
-  <div class="flex flex-col items-center md:items-start md:flex-row gap-8 mb-8">
+  <div
+    class="flex flex-col items-center md:items-start md:flex-row gap-8 mb-8 py-4 px-3"
+  >
     {#if feed?.image}
       <div class="relative shrink-0">
         <div
@@ -139,7 +141,9 @@
         />
       </div>
     {/if}
-    <div class="flex flex-col justify-start pt-1 gap-2 min-w-0">
+    <div
+      class="flex flex-col justify-start gap-2 min-w-0 w-full overflow-hidden"
+    >
       <h1
         class="text-2xl font-semibold tracking-tight text-center md:text-start"
       >
@@ -153,12 +157,12 @@
         </div>
       {/if}
       <div
-        class="flex flex-col md:flex-row font-bold flex-wrap justify-center md:justify-start items-center md:items-start gap-x-3 gap-y-1.5 text-sm text-muted-foreground"
+        class="flex flex-col md:flex-row font-bold flex-wrap justify-center md:justify-start items-center md:items-start gap-x-3 gap-y-1.5 text-sm text-muted-foreground min-w-0"
       >
         {#if feed?.author}
-          <span class="flex items-center gap-1.5">
+          <span class="flex items-center gap-1.5 min-w-0">
             <Mic class="size-3.5 shrink-0" />
-            {feed.author}
+            <span class="truncate">{feed.author}</span>
           </span>
         {/if}
         {#if feed?.link}
@@ -203,10 +207,14 @@
       {#snippet children(entry, index)}
         {@const duration = parseDuration(entry.duration)}
         <Item>
-          <ItemContent class="grid grid-cols-5">
-            <ItemTitle class="col-span-3">{entry.title ?? "Untitled"}</ItemTitle
+          <ItemContent class="flex flex-col md:grid md:grid-cols-5">
+            <ItemDescription class="md:hidden">
+              {formatDate(entry.published)}
+            </ItemDescription>
+            <ItemTitle class="md:col-span-3"
+              >{entry.title ?? "Untitled"}</ItemTitle
             >
-            <ItemDescription>
+            <ItemDescription class="hidden md:block">
               {formatDate(entry.published)}
             </ItemDescription>
             <ItemDescription>
