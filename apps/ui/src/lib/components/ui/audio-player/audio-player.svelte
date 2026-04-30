@@ -10,6 +10,10 @@
     audio?: HTMLAudioElement | null;
     /** Bindable ref to the <media-controller> element. */
     mediaController?: HTMLElement | null;
+    onplay?: (event: Event) => void;
+    onpause?: (event: Event) => void;
+    ontimeupdate?: (event: Event) => void;
+    onended?: (event: Event) => void;
   }
 
   let {
@@ -18,12 +22,17 @@
     audio = $bindable(null),
     mediaController = $bindable(null),
     style,
+    onplay,
+    onpause,
+    ontimeupdate,
+    onended,
     ...restProps
   }: Props = $props();
 </script>
 
 <media-controller
   audio
+  nohotkeys
   data-slot="audio-player"
   class={cn("w-full", className)}
   bind:this={mediaController}
@@ -57,6 +66,10 @@
     preload="metadata"
     data-slot="audio-player-element"
     bind:this={audio}
+    {onplay}
+    {onpause}
+    {ontimeupdate}
+    {onended}
   ></audio>
   {@render children?.()}
 </media-controller>

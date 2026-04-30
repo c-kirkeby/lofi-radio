@@ -35,6 +35,8 @@ export class Player {
       this.audio.src = episode.src;
       void this.audio.play();
     }
+
+    this.#setupMediaSession(episode);
   }
 
   playpause() {
@@ -54,6 +56,84 @@ export class Player {
     this.show = null;
     this.image = null;
     this.src = null;
+
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.metadata = null;
+      navigator.mediaSession.playbackState = "none";
+    }
+  }
+
+  onplay() {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "playing";
+    }
+  }
+
+  ontimeupdate() {
+    if (!this.audio || !("mediaSession" in navigator)) return;
+
+    navigator.mediaSession.setPositionState({
+      duration: this.audio.duration,
+      position: this.audio.currentTime,
+    });
+  }
+
+  onpause() {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "paused";
+    }
+  }
+
+  /* Not currently working; throws an error */
+  onended() {
+    this.close();
+  }
+
+  #setupMediaSession(episode: PlayerEpisode) {
+    if (!("mediaSession" in navigator)) return;
+
+    const artwork: MediaImage[] = episode.image ? [{ src: episode.image }] : [];
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: episode.title,
+      artist: episode.show,
+      artwork,
+    });
+
+    navigator.mediaSession.setActionHandler("play", () => {
+      void this.audio?.play();
+    });
+
+    navigator.mediaSession.setActionHandler("pause", () => {
+      this.audio?.pause();
+    });
+
+    navigator.mediaSession.setActionHandler("seekto", (details) => {
+      if (!this.audio || !details.seekTime) return;
+
+      if (details.fastSeek) {
+        this.audio.currentTime = details.seekTime;
+      } else {
+        this.audio.currentTime = details.seekTime;
+      }
+    });
+
+    navigator.mediaSession.setActionHandler("seekbackward", (details) => {
+      if (!this.audio) return;
+      this.audio.currentTime = Math.max(0, this.audio.currentTime - (details.seekOffset ?? 15));
+    });
+
+    navigator.mediaSession.setActionHandler("seekforward", (details) => {
+      if (!this.audio) return;
+      this.audio.currentTime = Math.min(
+        this.audio.duration,
+        this.audio.currentTime + (details.seekOffset ?? 30),
+      );
+    });
+
+    navigator.mediaSession.setActionHandler("stop", () => {
+      this.close();
+    });
   }
 }
 

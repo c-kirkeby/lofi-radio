@@ -51,6 +51,10 @@
       class="h-20 flex flex-col justify-center"
       bind:audio={player.audio}
       bind:mediaController={player.mediaController}
+      onplay={player.onplay}
+      onpause={player.onpause}
+      ontimeupdate={player.ontimeupdate}
+      onended={player.onended}
     >
       <div class="flex items-center gap-2 justify-center">
         <div class="flex items-center gap-4">
