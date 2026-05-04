@@ -37,10 +37,14 @@ export type Entry = {
 };
 
 export function parseFeed(rss: Rss.Feed<string>) {
-  const categories = (
-    rss.categories?.map((category) => category.name) ??
-    rss.itunes?.categories?.map((category) => category.text)
-  )?.filter((category): category is string => typeof category === "string");
+  const categories = [
+    ...new Set(
+      (
+        rss.categories?.map((category) => category.name) ??
+        rss.itunes?.categories?.map((category) => category.text)
+      )?.filter((category): category is string => typeof category === "string"),
+    ),
+  ];
   return {
     link: rss.link,
     title: rss.title,
