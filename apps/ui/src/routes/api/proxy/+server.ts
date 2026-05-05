@@ -22,6 +22,13 @@ export const GET: RequestHandler = async ({ url, request }) => {
     return new Response("Invalid URL");
   }
 
+  // Forward all query params except 'url' to the target
+  for (const [key, value] of url.searchParams) {
+    if (key !== "url") {
+      targetUrl.searchParams.set(key, value);
+    }
+  }
+
   const headers = new Headers(request.headers);
   headers.delete("host");
   headers.delete("sec-fetch-dest");
@@ -38,6 +45,7 @@ export const GET: RequestHandler = async ({ url, request }) => {
 
   const origin = request.headers.get("origin");
   try {
+    logger.info(`Proxying request to ${targetUrl} from origin ${origin}`);
     const response = await fetch(targetUrl, { headers });
 
     const responseHeaders = new Headers(response.headers);
