@@ -15,6 +15,8 @@ import { QueryClient } from "@tanstack/query-core";
 import * as v from "valibot";
 import { parseFeedUrl } from "@/feed/parser";
 import { cacheImage, resizeImage } from "@/caches/image";
+import { podcastIndexOptions, podcastIndexSchema } from "@/providers/podcast-index";
+import { createFetch } from "@better-fetch/fetch";
 
 const queryClient = new QueryClient();
 
@@ -166,7 +168,6 @@ async function getPodcastMeta(params: {
               published: entry.published,
               description: entry.description,
             }));
-
           episodesCollection.insert(episodes);
         }
 
@@ -185,3 +186,54 @@ async function getPodcastMeta(params: {
   return results.filter((result) => result !== null);
 }
 podcastsMetaCollection.createIndex((row) => row.podcastId);
+
+export type PodcastIndexResult = {
+  podcastGuid: string;
+  query: string;
+  title: string;
+  author: string;
+  description: string;
+  image: string;
+  link: string;
+};
+
+export const podcastIndexSearchCollection = createCollection(
+  queryCollectionOptions<PodcastIndexResult>({
+    id: "podcast-index",
+    queryClient,
+    syncMode: "on-demand",
+    queryKey: ["podcast-index"],
+    getKey: (result) => result.podcastGuid,
+    queryFn: async (ctx) => {
+      const parsed = parseLoadSubsetOptions(ctx.meta?.loadSubsetOptions);
+
+      let searchTerm = "";
+
+      parsed.filters.forEach(({ field, operator, value }) => {
+        if (operator === "eq" && field[0] === "query" && typeof value === "string") {
+          searchTerm = value;
+        }
+      });
+
+      if (!searchTerm) return [];
+
+      const $fetch = createFetch({ ...podcastIndexOptions, schema: podcastIndexSchema });
+
+      const response = await $fetch("/search/byterm", {
+        query: { q: searchTerm },
+      });
+
+      if (response.error || !response.data) return [];
+
+      return response.data.feeds.map((feed) => ({
+        podcastGuid: feed.podcastGuid,
+        query: searchTerm,
+        title: feed.title,
+        author: feed.author ?? "",
+        description: feed.description ?? "",
+        image: feed.artwork || feed.image || "",
+        link: feed.link ?? "",
+      }));
+    },
+  }),
+);

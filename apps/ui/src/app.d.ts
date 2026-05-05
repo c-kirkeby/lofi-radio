@@ -8,6 +8,11 @@ declare global {
     // interface PageState {}
     // interface Platform {}
   }
+
+  interface ImportMetaEnv {
+    readonly VITE_PODCAST_INDEX_KEY: string;
+    readonly VITE_PODCAST_INDEX_SECRET: string;
+  }
 }
 
 export {};
