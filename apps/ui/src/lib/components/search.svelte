@@ -10,23 +10,15 @@
   let ref = $state<HTMLInputElement | null>(null);
   let q = $state(page.url.searchParams.get("q") ?? "");
 
-  function handleInput(event: Event) {
-    const target = event.currentTarget as HTMLInputElement;
-    const value = target.value;
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
 
-    q = value;
-
-    const url = new URLSearchParams();
-    url.set("q", value);
-
-    if (value.trim()) {
-      goto(`/search?${url.toString()}`, {
-        keepFocus: true,
-      });
-    } else {
-      goto(resolve("/"), {
-        keepFocus: true,
-      });
+    if (q.trim()) {
+      const url = new URLSearchParams();
+      url.set("q", q.trim());
+      goto(`/search?${url.toString()}`);
+    } else if (page.url.pathname !== "/") {
+      goto(resolve("/"));
     }
   }
 </script>
@@ -51,20 +43,15 @@
   }}
 />
 
-<div class="flex w-full max-w-xs flex-col gap-6">
+<form onsubmit={handleSubmit} class="flex w-full max-w-xs flex-col gap-6">
   <InputGroup.Root>
     <InputGroup.Addon>
       <SearchIcon />
     </InputGroup.Addon>
 
-    <InputGroup.Input
-      bind:ref
-      value={q}
-      oninput={handleInput}
-      placeholder="Search..."
-    />
+    <InputGroup.Input bind:ref bind:value={q} placeholder="Search..." />
     <InputGroup.Addon align="inline-end">
       <Kbd.Root>/</Kbd.Root>
     </InputGroup.Addon>
   </InputGroup.Root>
-</div>
+</form>
