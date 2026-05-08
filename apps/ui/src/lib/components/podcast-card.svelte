@@ -2,28 +2,24 @@
   import * as Card from "@/components/ui/card";
   import { AspectRatio } from "@/components/ui/aspect-ratio";
   import { Skeleton } from "@/components/ui/skeleton";
-
   import { resolve } from "$app/paths";
-  import { type PodcastInput, type PodcastMetaInput } from "@/db/collections";
+  import type { PodcastInput } from "@/db/collections";
 
-  let {
-    podcast,
-  }: { podcast: PodcastInput & { podcastsMeta: PodcastMetaInput[] } } =
-    $props();
+  let { podcast }: { podcast: PodcastInput } = $props();
 </script>
 
-<a href={resolve(`/podcast/${podcast.id}`)} class="block">
+<a href={resolve(`/podcast/${podcast.feedId}`)} class="block">
   <Card.Root
     class="py-0 overflow-hidden transition-transform duration-100 ease-in-out hover:scale-105"
   >
     <Card.Content class="px-0" style="border-radius: inherit">
       <AspectRatio ratio={1 / 1}>
-        {#if podcast.podcastsMeta?.[0]?.image}
+        {#if podcast.image}
           <img
-            src={`/image/${podcast.id}.png`}
-            alt={podcast.podcastsMeta[0].title ?? podcast.text}
+            src={`/image/${podcast.feedId}.png`}
+            alt={podcast.title}
             class="size-full object-cover"
-            style:view-transition-name={`podcast-${podcast.id}`}
+            style:view-transition-name={`podcast-${podcast.feedId}`}
           />
         {:else}
           <Skeleton class="size-full rounded-none" />

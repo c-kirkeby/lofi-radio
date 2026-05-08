@@ -3,47 +3,67 @@
   import { AspectRatio } from "@/components/ui/aspect-ratio";
   import { Skeleton } from "@/components/ui/skeleton";
   import { resolve } from "$app/paths";
-  import type { PodcastMetaInput } from "@/db/collections";
-  import { CircleCheck } from "@lucide/svelte";
+  import type { PodcastInput } from "@/db/collections";
+  import { CircleCheck, Plus } from "@lucide/svelte";
 
   let {
-    podcastMeta,
-    isLocal = false,
-  }: { podcastMeta: PodcastMetaInput; isLocal?: boolean } = $props();
+    podcast,
+    onsubscribe,
+    onunsubscribe,
+  }: {
+    podcast: PodcastInput;
+    onsubscribe?: () => void;
+    onunsubscribe?: () => void;
+  } = $props();
 </script>
 
-<a href={resolve(`/podcast/${podcastMeta.podcastId}`)} class="block group">
+<a href={resolve(`/podcast/${podcast.feedId}`)} class="block group">
   <Card.Root
     class="py-0 overflow-hidden transition-transform duration-100 ease-in-out group-hover:scale-105"
   >
     <Card.Content class="px-0 relative" style="border-radius: inherit">
-        <AspectRatio ratio={1 / 1}>
-          {#if podcastMeta.image}
-            <img
-              src={podcastMeta.image}
-              alt={podcastMeta.title}
-              class="size-full object-cover"
-              style:view-transition-name={`podcast-${podcastMeta.podcastId}`}
-            />
-          {:else}
-            <Skeleton class="size-full rounded-none" />
-          {/if}
-        </AspectRatio>
-        {#if isLocal}
-          <CircleCheck
-            class="absolute bottom-1.5 right-1.5 size-5 text-green-500 drop-shadow"
-            fill="white"
+      <AspectRatio ratio={1 / 1}>
+        {#if podcast.image}
+          <img
+            src={podcast.image}
+            alt={podcast.title}
+            class="size-full object-cover"
+            style:view-transition-name={`podcast-${podcast.feedId}`}
           />
+        {:else}
+          <Skeleton class="size-full rounded-none" />
         {/if}
-      </Card.Content>
+      </AspectRatio>
+
+      <!-- Subscribe toggle overlay -->
+      {#if podcast.subscribed}
+        <!-- Always visible: green checkmark, click to unsubscribe -->
+        <button
+          class="absolute bottom-1.5 right-1.5 rounded-full bg-white/80 backdrop-blur-sm p-0.5 text-green-500 drop-shadow transition-opacity"
+          aria-label="Unsubscribe from {podcast.title}"
+          onclick={(e) => { e.preventDefault(); onunsubscribe?.(); }}
+        >
+          <CircleCheck class="size-5" fill="white" />
+        </button>
+      {:else}
+        <!-- Only visible on hover: plus icon -->
+        <button
+          class="absolute bottom-1.5 right-1.5 rounded-full bg-white/80 backdrop-blur-sm p-0.5 text-foreground drop-shadow opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="Subscribe to {podcast.title}"
+          onclick={(e) => { e.preventDefault(); onsubscribe?.(); }}
+        >
+          <Plus class="size-5" />
+        </button>
+      {/if}
+    </Card.Content>
   </Card.Root>
   <div class="mt-2 px-0.5">
     <p class="text-sm font-medium leading-tight line-clamp-2">
-      {podcastMeta.title ?? ""}
+      {podcast.title ?? ""}
     </p>
-    {#if podcastMeta.author}
+    {#if podcast.author}
       <p class="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-        {podcastMeta.author}
+        {podcast.author}
       </p>
     {/if}
   </div>

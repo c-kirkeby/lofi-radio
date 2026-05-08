@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import { createSchema, type CreateFetchOption } from "@better-fetch/fetch";
+import { createFetch, createSchema, type CreateFetchOption } from "@better-fetch/fetch";
 import { sha1 } from "@/sha1";
 import pino from "pino";
 
@@ -11,6 +11,106 @@ const settings = {
 } as const;
 
 const schema = createSchema({
+  "podcasts/byfeedid": {
+    query: v.object({
+      id: v.number(),
+    }),
+    output: v.object({
+      status: v.picklist(["true", "false"]),
+      query: v.object({
+        id: v.string(),
+      }),
+      feed: v.looseObject({
+        id: v.number(),
+        podcastGuid: v.string(),
+        title: v.string(),
+        url: v.string(),
+        originalUrl: v.string(),
+        link: v.nullable(v.string()),
+        description: v.nullable(v.string()),
+        author: v.nullable(v.string()),
+        ownerName: v.nullable(v.string()),
+        image: v.nullable(v.string()),
+        artwork: v.nullable(v.string()),
+        lastUpdateTime: v.number(),
+        lastCrawlTime: v.number(),
+        lastParseTime: v.number(),
+        lastGoodHttpStatusTime: v.number(),
+        lastHttpStatus: v.number(),
+        contentType: v.string(),
+        itunesId: v.nullable(v.number()),
+        itunesType: v.string(),
+        generator: v.nullable(v.string()),
+        language: v.string(),
+        explicit: v.boolean(),
+        type: v.picklist([
+          0, // RSS
+          1, // Atom
+        ]),
+        medium: v.string(),
+        dead: v.picklist([0, 1]),
+        chash: v.string(),
+        episodeCount: v.number(),
+        crawlErrors: v.number(),
+        parseErrors: v.number(),
+        categories: v.record(v.string(), v.string()),
+        locked: v.picklist([0, 1]),
+        imageUrlHash: v.number(),
+        value: v.optional(v.unknown()),
+        funding: v.optional(v.unknown()),
+      }),
+    }),
+  },
+  "podcasts/byfeedurl": {
+    query: v.object({
+      url: v.pipe(v.string(), v.url()),
+    }),
+    output: v.object({
+      status: v.picklist(["true", "false"]),
+      query: v.object({
+        url: v.string(),
+      }),
+      feed: v.looseObject({
+        id: v.number(),
+        podcastGuid: v.string(),
+        title: v.string(),
+        url: v.string(),
+        originalUrl: v.string(),
+        link: v.nullable(v.string()),
+        description: v.nullable(v.string()),
+        author: v.nullable(v.string()),
+        ownerName: v.nullable(v.string()),
+        image: v.nullable(v.string()),
+        artwork: v.nullable(v.string()),
+        lastUpdateTime: v.number(),
+        lastCrawlTime: v.number(),
+        lastParseTime: v.number(),
+        lastGoodHttpStatusTime: v.number(),
+        lastHttpStatus: v.number(),
+        contentType: v.string(),
+        itunesId: v.nullable(v.number()),
+        itunesType: v.string(),
+        generator: v.nullable(v.string()),
+        language: v.string(),
+        explicit: v.boolean(),
+        type: v.picklist([
+          0, // RSS
+          1, // Atom
+        ]),
+        medium: v.string(),
+        dead: v.picklist([0, 1]),
+        chash: v.string(),
+        episodeCount: v.number(),
+        crawlErrors: v.number(),
+        parseErrors: v.number(),
+        categories: v.record(v.string(), v.string()),
+        locked: v.picklist([0, 1]),
+        imageUrlHash: v.number(),
+        value: v.optional(v.unknown()),
+        funding: v.optional(v.unknown()),
+      }),
+    }),
+  },
   "/search/byterm": {
     query: v.object({
       q: v.string(),
@@ -73,7 +173,7 @@ async function createAuthHeaders() {
   };
 }
 
-const podcastIndexOptions: CreateFetchOption = {
+export const podcastIndexClient = createFetch({
   baseURL: `/api/proxy?url=${encodeURIComponent(settings.baseUrl)}`,
   onRequest: async (context) => {
     return {
@@ -88,6 +188,4 @@ const podcastIndexOptions: CreateFetchOption = {
   onError: (error) => {
     logger.error(error);
   },
-};
-
-export { podcastIndexOptions, schema as podcastIndexSchema };
+});
