@@ -1,10 +1,9 @@
+import { BasicIndex, createCollection, type SimpleComparison } from "@tanstack/svelte-db";
 import {
-  BasicIndex,
-  createCollection,
-  type ParsedOrderBy,
-  type SimpleComparison,
-} from "@tanstack/svelte-db";
-import { queryCollectionOptions, parseLoadSubsetOptions } from "@tanstack/query-db-collection";
+  queryCollectionOptions,
+  parseLoadSubsetOptions,
+  parseWhereExpression,
+} from "@tanstack/query-db-collection";
 import {
   createBrowserWASQLitePersistence,
   persistedCollectionOptions,
@@ -15,8 +14,7 @@ import { QueryClient } from "@tanstack/query-core";
 import * as v from "valibot";
 import { parseFeedUrl } from "@/feed/parser";
 import { cacheImage, resizeImage } from "@/caches/image";
-import { podcastIndexOptions, podcastIndexSchema } from "@/providers/podcast-index";
-import { createFetch } from "@better-fetch/fetch";
+import { podcastIndexClient } from "@/providers/podcast-index";
 
 const queryClient = new QueryClient();
 
@@ -33,26 +31,134 @@ const persistence = createBrowserWASQLitePersistence({
   coordinator,
 });
 
+
 const PodcastSchema = v.object({
-  id: v.string(),
-  text: v.string(),
+  feedId: v.number(),
+  podcastGuid: v.string(),
+  subscribed: v.boolean(),
   xmlUrl: v.string(),
-  type: v.optional(v.string()),
+  title: v.string(),
+  author: v.string(),
+  description: v.string(),
+  image: v.string(),
+  link: v.string(),
+  language: v.optional(v.string()),
+  categories: v.optional(v.array(v.string())),
 });
 
 export type PodcastInput = v.InferInput<typeof PodcastSchema>;
 
+function feedFromPIFeed(feed: {
+  id: number;
+  podcastGuid: string;
+  url: string;
+  title: string;
+  author?: string | null;
+  description?: string | null;
+  artwork?: string | null;
+  image?: string | null;
+  link?: string | null;
+  language?: string;
+  categories?: Record<string, string>;
+}): PodcastInput {
+  return {
+    feedId: feed.id,
+    podcastGuid: feed.podcastGuid,
+    subscribed: false,
+    xmlUrl: feed.url,
+    title: feed.title,
+    author: feed.author ?? "",
+    description: feed.description ?? "",
+    image: feed.artwork || feed.image || "",
+    link: feed.link ?? "",
+    language: feed.language || undefined,
+    categories: feed.categories ? Object.values(feed.categories) : undefined,
+  };
+}
+
 export const podcastsCollection = createCollection(
-  persistedCollectionOptions<PodcastInput, string>({
+  persistedCollectionOptions<PodcastInput, number>({
     id: "podcasts",
     persistence,
-    getKey: (podcast) => podcast.id,
     schemaVersion: 1,
+    defaultIndexType: BasicIndex,
+    autoIndex: "eager",
+    ...queryCollectionOptions({
+      queryKey: opts => {
+        if (opts.where) {
+          return ["podcasts", JSON.stringify(opts.where)];
+        }
+        return ["podcasts"];
+      },
+      onInsert: async () => { },
+      onUpdate: async () => { },
+      onDelete: async () => { },
+      queryClient,
+      syncMode: "on-demand",
+      getKey: (podcast) => podcast.feedId,
+      queryFn: async (ctx) => {
+        const where = ctx.meta?.loadSubsetOptions?.where;
+        return getPodcasts(where);
+      },
+    }),
   }),
 );
 
+type WhereClause = { feedId?: number; searchTerm?: string };
+
+function extractPodcastFilters(where: unknown): WhereClause {
+  const result: WhereClause = {};
+
+  parseWhereExpression(where as Parameters<typeof parseWhereExpression>[0], {
+    handlers: {
+      eq: (field: string[], value: unknown) => {
+        if (field.join(".").includes("feedId") && typeof value === "number") {
+          result.feedId = value;
+        }
+        return null;
+      },
+      ilike: (field: string[], value: unknown) => {
+        if (field.join(".").includes("title") && typeof value === "string") {
+          result.searchTerm = value.replace(/^%|%$/g, "");
+        }
+        return null;
+      },
+      and: (..._args: unknown[]) => null,
+      or: (..._args: unknown[]) => null,
+    },
+    onUnknownOperator: () => null,
+  });
+
+  return result;
+}
+
+async function getPodcasts(where: unknown): Promise<PodcastInput[]> {
+  const { feedId, searchTerm } = extractPodcastFilters(where);
+
+  if (feedId !== undefined) {
+    const existing = podcastsCollection.get(feedId);
+    if (existing) return [{ ...existing }];
+    const response = await podcastIndexClient("podcasts/byfeedid", { query: { id: feedId } });
+    if (response.error || !response.data || response.data.status !== "true") return [];
+    const podcast = feedFromPIFeed(response.data.feed);
+    return [podcast];
+  }
+
+  if (searchTerm) {
+    const response = await podcastIndexClient("/search/byterm", { query: { q: searchTerm } });
+    if (response.error || !response.data || response.data.status !== "true") return [];
+    return response.data.feeds.map((f) => {
+      const podcast = feedFromPIFeed(f);
+      podcast.subscribed = podcastsCollection.get(f.id)?.subscribed ?? false;
+      return podcast;
+    });
+  }
+
+  return [...podcastsCollection.entries()].map(([, podcast]) => ({ ...podcast }));
+}
+
 const EpisodeSchema = v.object({
-  podcastId: v.string(),
+  feedId: v.number(),
   link: v.optional(v.string()),
   url: v.string(),
   title: v.optional(v.string()),
@@ -70,170 +176,82 @@ export const episodesCollection = createCollection(
   persistedCollectionOptions<EpisodeInput, string>({
     id: "episodes",
     persistence,
+    schemaVersion: 1,
     defaultIndexType: BasicIndex,
     autoIndex: "eager",
-    getKey: (episode) => episode.url,
-    schemaVersion: 1,
-  }),
-);
-
-episodesCollection.createIndex((row) => row.podcastId);
-
-const PodcastMetaSchema = v.object({
-  podcastId: v.string(),
-  link: v.optional(v.string()),
-  title: v.optional(v.string()),
-  description: v.optional(v.string()),
-  generator: v.optional(v.string()),
-  language: v.optional(v.string()),
-  published: v.optional(v.date()),
-  image: v.optional(v.string()),
-  owner: v.optional(v.string()),
-  author: v.optional(v.string()),
-  categories: v.optional(v.array(v.string())),
-});
-
-export type PodcastMetaInput = v.InferInput<typeof PodcastMetaSchema>;
-
-export const podcastsMetaCollection = createCollection(
-  persistedCollectionOptions<PodcastMetaInput, string>({
-    id: "podcasts-meta",
-    persistence,
-    defaultIndexType: BasicIndex,
-    autoIndex: "eager",
-    schemaVersion: 1,
     ...queryCollectionOptions({
-      queryKey: ["podcasts-meta"],
+      queryKey: opts => {
+        if (opts.where) {
+          return ['episodes', JSON.stringify(opts.where)];
+        }
+        return ['episodes'];
+      },
       queryClient,
-      staleTime: 12 * 60 * 60 * 1000, // 12 hours
       syncMode: "on-demand",
-      autoIndex: "eager",
-      defaultIndexType: BasicIndex,
-      getKey: (podcastMeta) => podcastMeta.podcastId,
+      staleTime: 12 * 60 * 60 * 1000, // 12 hours
+      getKey: (episode) => episode.url,
       queryFn: async (ctx) => {
-        const params = parseLoadSubsetOptions(ctx.meta?.loadSubsetOptions);
-        return getPodcastMeta(params);
+        const { filters } = parseLoadSubsetOptions(ctx.meta?.loadSubsetOptions);
+        return getEpisodes(filters);
       },
     }),
   }),
 );
 
-async function getPodcastMeta(params: {
-  filters: Array<SimpleComparison>;
-  sorts: Array<ParsedOrderBy>;
-  limit?: number;
-}): Promise<PodcastMetaInput[]> {
-  const { filters } = params;
+episodesCollection.createIndex((row) => row.feedId);
 
-  let pairs: { podcastId: string; url: string }[] = [];
+async function getEpisodes(filters: Array<SimpleComparison>): Promise<EpisodeInput[]> {
+  const pairs: { feedId: number; url: string }[] = [];
 
-  filters.forEach(({ field, operator, value }) => {
-    if (field.includes("podcastId") && operator === "in" && Array.isArray(value)) {
-      value.forEach((podcastId) => {
-        const podcast = podcastsCollection.get(podcastId);
-        if (podcast?.xmlUrl) {
-          pairs.push({ podcastId, url: podcast.xmlUrl });
-        }
-      });
+  for (const { field, operator, value } of filters) {
+    const fieldName = Array.isArray(field) ? field.join(".") : field;
+
+    if (fieldName.includes("feedId") && operator === "in" && Array.isArray(value)) {
+      for (const feedId of value) {
+        const podcast = podcastsCollection.get(feedId);
+        if (podcast?.xmlUrl) pairs.push({ feedId, url: podcast.xmlUrl });
+      }
+    } else if (fieldName.includes("feedId") && operator === "eq" && typeof value === "number") {
+      const podcast = podcastsCollection.get(value);
+      if (podcast?.xmlUrl) pairs.push({ feedId: value, url: podcast.xmlUrl });
     }
-  });
+  }
 
   const results = await Promise.all(
-    pairs.map(async ({ podcastId, url }) => {
+    pairs.map(async ({ feedId, url }) => {
       try {
         const feed = await parseFeedUrl(url);
         if (feed.image) {
           const image = await resizeImage(feed.image);
-          await cacheImage(image, podcastId, "images");
+          await cacheImage(image, String(feedId), "images");
         }
-        const { entries, ...meta } = feed;
+        const { entries } = feed;
+        if (!entries?.length) return [];
 
-        if (entries?.length) {
-          const episodes: EpisodeInput[] = entries
-            .filter(
-              (entry): entry is typeof entry & { url: string } =>
-                !!entry.url && !episodesCollection.has(entry.url),
-            )
-            .filter((entry, index, self) => index === self.findIndex((e) => e.url === entry.url)) // Remove duplicates
-            .sort((a, b) => (b.published?.getTime() ?? 0) - (a.published?.getTime() ?? 0))
-            .map((entry) => ({
-              podcastId,
-              link: entry.link,
-              url: entry.url,
-              title: entry.title,
-              type: entry.type,
-              length: entry.length,
-              duration: entry.duration,
-              image: entry.image,
-              published: entry.published,
-              description: entry.description,
-            }));
-          episodesCollection.insert(episodes);
-        }
+        const episodes: EpisodeInput[] = entries
+          .filter((entry): entry is typeof entry & { url: string } => !!entry.url)
+          .filter((entry, index, self) => index === self.findIndex((e) => e.url === entry.url))
+          .sort((a, b) => (b.published?.getTime() ?? 0) - (a.published?.getTime() ?? 0))
+          .map((entry) => ({
+            feedId,
+            link: entry.link,
+            url: entry.url,
+            title: entry.title,
+            type: entry.type,
+            length: entry.length,
+            duration: entry.duration,
+            image: entry.image,
+            published: entry.published,
+            description: entry.description,
+          }));
 
-        return {
-          podcastId,
-          ...feed,
-          ...meta
-        };
+        return episodes;
       } catch (error) {
-        console.error(`Failed to fetch or parse feed for podcast ${podcastId}:`, error);
-        return null;
+        console.error(`Failed to fetch or parse feed for feedId ${feedId}:`, error);
+        return [];
       }
     }),
   );
 
-  return results.filter((result) => result !== null);
+  return results.flat();
 }
-podcastsMetaCollection.createIndex((row) => row.podcastId);
-
-export type PodcastIndexResult = {
-  podcastGuid: string;
-  query: string;
-  title: string;
-  author: string;
-  description: string;
-  image: string;
-  link: string;
-};
-
-export const podcastIndexSearchCollection = createCollection(
-  queryCollectionOptions<PodcastIndexResult>({
-    id: "podcast-index",
-    queryClient,
-    syncMode: "on-demand",
-    queryKey: ["podcast-index"],
-    getKey: (result) => result.podcastGuid,
-    queryFn: async (ctx) => {
-      const parsed = parseLoadSubsetOptions(ctx.meta?.loadSubsetOptions);
-
-      let searchTerm = "";
-
-      parsed.filters.forEach(({ field, operator, value }) => {
-        if (operator === "eq" && field[0] === "query" && typeof value === "string") {
-          searchTerm = value;
-        }
-      });
-
-      if (!searchTerm) return [];
-
-      const $fetch = createFetch({ ...podcastIndexOptions, schema: podcastIndexSchema });
-
-      const response = await $fetch("/search/byterm", {
-        query: { q: searchTerm },
-      });
-
-      if (response.error || !response.data) return [];
-
-      return response.data.feeds.map((feed) => ({
-        podcastGuid: feed.podcastGuid,
-        query: searchTerm,
-        title: feed.title,
-        author: feed.author ?? "",
-        description: feed.description ?? "",
-        image: feed.artwork || feed.image || "",
-        link: feed.link ?? "",
-      }));
-    },
-  }),
-);
