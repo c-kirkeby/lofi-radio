@@ -3,6 +3,12 @@ packages:
   - packages/*
   - tools/*
 
+allowBuilds:
+  "@journeyapps/wa-sqlite": true
+  esbuild: true
+  sharp: true
+  workerd: true
+
 catalog:
   "@better-fetch/fetch": ^1.1.21
   "@extractus/feed-extractor": ^7.1.7
