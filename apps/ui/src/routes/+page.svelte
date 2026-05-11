@@ -8,6 +8,7 @@
   import { useLiveQuery } from "@tanstack/svelte-db";
   import { parseOpml } from "feedsmith";
   import { podcastIndexClient } from "@/providers/podcast-index";
+  import { cacheImage, resizeImage } from "@/caches/image";
 
   const outlineSchema = v.object({
     text: v.string(),
@@ -92,6 +93,8 @@
             language: feed.language || undefined,
             categories: Object.values(feed.categories ?? {}),
           };
+          const image = await resizeImage(podcast.image);
+          await cacheImage(image, String(podcast.feedId), "image");
           if (podcastsCollection.has(feed.id)) {
             podcastsCollection.update(feed.id, (draft) => {
               Object.assign(draft, podcast);

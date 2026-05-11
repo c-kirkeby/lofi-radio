@@ -90,8 +90,32 @@ export const podcastsCollection = createCollection(
         }
         return ["podcasts"];
       },
-      onInsert: async () => { },
-      onUpdate: async () => { },
+      onInsert: async ({ transaction }) => {
+        for (const mutation of transaction.mutations) {
+          const podcast = mutation.modified as PodcastInput;
+          if (podcast.subscribed && podcast.image) {
+            try {
+              const image = await resizeImage(podcast.image);
+              await cacheImage(image, String(podcast.feedId), "image");
+            } catch {
+              // best-effort
+            }
+          }
+        }
+      },
+      onUpdate: async ({ transaction }) => {
+        for (const mutation of transaction.mutations) {
+          const podcast = mutation.modified as PodcastInput;
+          if (podcast.subscribed && podcast.image) {
+            try {
+              const image = await resizeImage(podcast.image);
+              await cacheImage(image, String(podcast.feedId), "image");
+            } catch {
+              // best-effort
+            }
+          }
+        }
+      },
       onDelete: async () => { },
       queryClient,
       syncMode: "on-demand",
@@ -223,7 +247,7 @@ async function getEpisodes(filters: Array<SimpleComparison>): Promise<EpisodeInp
         const feed = await parseFeedUrl(url);
         if (feed.image) {
           const image = await resizeImage(feed.image);
-          await cacheImage(image, String(feedId), "images");
+          await cacheImage(image, String(feedId), "image");
         }
         const { entries } = feed;
         if (!entries?.length) return [];
