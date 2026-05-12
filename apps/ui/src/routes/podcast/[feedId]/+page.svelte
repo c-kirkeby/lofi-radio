@@ -1,25 +1,13 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { parseDuration } from "$lib/feeds";
   import { sanitiseDescription } from "$lib/feed/parser";
-  import { player } from "$lib/state/player.svelte";
   import { Skeleton } from "@/components/ui/skeleton";
   import { Button } from "@/components/ui/button";
   import { Badge } from "@/components/ui/badge";
-  import {
-    ItemGroup,
-    Item,
-    ItemContent,
-    ItemTitle,
-    ItemDescription,
-    ItemActions,
-  } from "@/components/ui/item";
   import { Play, Mic, Link, Plus, CircleCheck } from "@lucide/svelte";
-  import ItemSeparator from "@/components/ui/item/item-separator.svelte";
   import { eq, useLiveQuery } from "@tanstack/svelte-db";
   import { podcastsCollection, episodesCollection } from "@/db/collections";
-  import { WindowVirtualizer } from "virtua/svelte";
-  import { formatDate } from "@/dates";
+  import EpisodeList from "@/components/episode-list.svelte";
 
   const DESCRIPTION_LIMIT = 100;
 
@@ -40,6 +28,7 @@
       .where(({ episodes }) => eq(episodes.feedId, feedId))
       .orderBy(({ episodes }) => episodes.published, "desc")
       .select(({ episodes }) => ({
+        feedId: episodes.feedId,
         title: episodes.title,
         url: episodes.url,
         published: episodes.published,
@@ -70,21 +59,6 @@
     });
   }
 
-  function playEpisode(entry: {
-    url?: string;
-    title?: string;
-    image?: string;
-  }) {
-    if (!entry.url || !podcast?.title || !entry.title) return;
-    player.load({
-      src: entry.url,
-      title: entry.title,
-      show: podcast.title,
-      id: String(podcast.feedId),
-      image: entry.image ?? podcast.image,
-    });
-  }
-
   let descriptionExpanded = $state(false);
 </script>
 
@@ -94,21 +68,17 @@
   >
     <Skeleton class="size-32 md:size-48 rounded-xl shrink-0" />
     <div class="flex flex-col gap-2 justify-start w-full">
-      <!-- Title: centered on mobile, left on md+ -->
       <Skeleton class="h-8 w-2/3 mx-auto md:mx-0" />
-      <!-- Categories: hidden on mobile -->
       <div class="hidden md:flex flex-row gap-2">
         <Skeleton class="h-5 w-16 rounded-full" />
         <Skeleton class="h-5 w-20 rounded-full" />
       </div>
-      <!-- Author / link: stacked on mobile, row on md+ -->
       <div
         class="flex flex-col md:flex-row items-center md:items-start gap-1.5"
       >
         <Skeleton class="h-4 w-28" />
         <Skeleton class="h-4 w-40" />
       </div>
-      <!-- Description -->
       <div class="flex flex-col gap-1.5 mt-1">
         <Skeleton class="h-3.5 w-full" />
         <Skeleton class="h-3.5 w-full" />
@@ -117,21 +87,11 @@
       </div>
     </div>
   </div>
-  <!-- Episode list skeleton -->
-  {#each { length: 8 } as _, i (i)}
-    <div class="flex items-center gap-2 py-3 border-b px-3">
-      <div class="flex-1 grid md:grid-cols-5 gap-1.5 items-center">
-        <!-- date: shown above title on mobile, hidden on md -->
-        <Skeleton class="h-3 w-20 md:hidden" />
-        <!-- title spans 3 cols on md -->
-        <Skeleton class="h-4 w-3/4 md:col-span-3" />
-        <!-- date: hidden on mobile, col 4 on md -->
-        <Skeleton class="hidden md:block h-3 w-20" />
-        <!-- duration -->
-        <Skeleton class="h-3 w-12" />
-      </div>
-    </div>
-  {/each}
+  <EpisodeList
+    episodes={[]}
+    podcastTitle=""
+    isLoading={true}
+  />
 {:else if notFound}
   <p class="text-muted-foreground text-sm">Podcast not found.</p>
 {:else if podcast}
@@ -231,40 +191,10 @@
     </div>
   </div>
 
-  <ItemGroup>
-    <WindowVirtualizer data={episodesQuery.data}>
-      {#snippet children(entry, index)}
-        {@const duration = parseDuration(entry.duration)}
-        <Item>
-          <ItemContent class="flex flex-col md:grid md:grid-cols-5">
-            <ItemDescription class="md:hidden">
-              {formatDate(entry.published)}
-            </ItemDescription>
-            <ItemTitle class="md:col-span-3"
-              >{entry.title ?? "Untitled"}</ItemTitle
-            >
-            <ItemDescription class="hidden md:block">
-              {formatDate(entry.published)}
-            </ItemDescription>
-            <ItemDescription>
-              {duration}
-            </ItemDescription>
-          </ItemContent>
-          <ItemActions>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Play {entry.title}"
-              onclick={() => playEpisode(entry)}
-            >
-              <Play class="size-4" />
-            </Button>
-          </ItemActions>
-        </Item>
-        {#if index !== (episodesQuery.data?.length ?? 0) - 1}
-          <ItemSeparator />
-        {/if}
-      {/snippet}
-    </WindowVirtualizer>
-  </ItemGroup>
+  <EpisodeList
+    episodes={episodesQuery.data}
+    podcastTitle={podcast.title}
+    podcastImage={podcast.image}
+    isLoading={episodesQuery.isLoading}
+  />
 {/if}

@@ -31,7 +31,6 @@ const persistence = createBrowserWASQLitePersistence({
   coordinator,
 });
 
-
 const PodcastSchema = v.object({
   feedId: v.number(),
   podcastGuid: v.string(),
@@ -84,7 +83,7 @@ export const podcastsCollection = createCollection(
     defaultIndexType: BasicIndex,
     autoIndex: "eager",
     ...queryCollectionOptions({
-      queryKey: opts => {
+      queryKey: (opts) => {
         if (opts.where) {
           return ["podcasts", JSON.stringify(opts.where)];
         }
@@ -116,7 +115,7 @@ export const podcastsCollection = createCollection(
           }
         }
       },
-      onDelete: async () => { },
+      onDelete: async () => {},
       queryClient,
       syncMode: "on-demand",
       getKey: (podcast) => podcast.feedId,
@@ -162,16 +161,20 @@ async function getPodcasts(where: unknown): Promise<PodcastInput[]> {
   if (feedId !== undefined) {
     const existing = podcastsCollection.get(feedId);
     if (existing) return [{ ...existing }];
-    const response = await podcastIndexClient("podcasts/byfeedid", { query: { id: feedId } });
-    if (response.error || !response.data || response.data.status !== "true") return [];
-    const podcast = feedFromPIFeed(response.data.feed);
+    const { data, error } = await podcastIndexClient("podcasts/byfeedid", {
+      query: { id: feedId },
+    });
+    if (error || !data || data.status !== "true") return [];
+    const podcast = feedFromPIFeed(data.feed);
     return [podcast];
   }
 
   if (searchTerm) {
-    const response = await podcastIndexClient("/search/byterm", { query: { q: searchTerm } });
-    if (response.error || !response.data || response.data.status !== "true") return [];
-    return response.data.feeds.map((f) => {
+    const { data, error } = await podcastIndexClient("/search/byterm", {
+      query: { q: searchTerm },
+    });
+    if (error || !data || data.status !== "true") return [];
+    return data.feeds.map((f) => {
       const podcast = feedFromPIFeed(f);
       podcast.subscribed = podcastsCollection.get(f.id)?.subscribed ?? false;
       return podcast;
@@ -204,11 +207,11 @@ export const episodesCollection = createCollection(
     defaultIndexType: BasicIndex,
     autoIndex: "eager",
     ...queryCollectionOptions({
-      queryKey: opts => {
+      queryKey: (opts) => {
         if (opts.where) {
-          return ['episodes', JSON.stringify(opts.where)];
+          return ["episodes", JSON.stringify(opts.where)];
         }
-        return ['episodes'];
+        return ["episodes"];
       },
       queryClient,
       syncMode: "on-demand",
@@ -278,4 +281,120 @@ async function getEpisodes(filters: Array<SimpleComparison>): Promise<EpisodeInp
   );
 
   return results.flat();
+}
+
+const ProgressSchema = v.object({
+  url: v.string(),
+  feedId: v.number(),
+  position: v.number(),
+  duration: v.number(),
+  played: v.boolean(),
+  updatedAt: v.date(),
+});
+
+export type ProgressInput = v.InferInput<typeof ProgressSchema>;
+
+export const progressCollection = createCollection(
+  persistedCollectionOptions<ProgressInput, string>({
+    id: "progress",
+    persistence,
+    schemaVersion: 1,
+    defaultIndexType: BasicIndex,
+    autoIndex: "eager",
+    getKey: (progress) => progress.url,
+  }),
+);
+
+const QueueSchema = v.object({
+  /** Episode audio URL — primary key, matches EpisodeInput.url */
+  url: v.string(),
+  /** Podcast feed ID — needed to look up podcast title/image for queue page */
+  feedId: v.number(),
+  /**
+   * Integer sort order (0-based, gapless).
+   * Kept as an explicit field to support future drag-to-reorder without
+   * requiring a schema migration — just update the `order` values.
+   */
+  order: v.number(),
+  /** When the episode was added to the queue */
+  addedAt: v.date(),
+});
+
+export type QueueInput = v.InferInput<typeof QueueSchema>;
+
+export const queueCollection = createCollection(
+  persistedCollectionOptions<QueueInput, string>({
+    id: "queue",
+    persistence,
+    schemaVersion: 1,
+    defaultIndexType: BasicIndex,
+    autoIndex: "eager",
+    getKey: (item) => item.url,
+  }),
+);
+
+/** Returns all queue items sorted by `order` ascending. */
+export function getQueueOrdered(): QueueInput[] {
+  return [...queueCollection.entries()].map(([, q]) => q).sort((a, b) => a.order - b.order);
+}
+
+/** Add an episode to the front of the queue (play next). */
+export function enqueueNext(url: string, feedId: number): void {
+  // Shift all existing items up by 1
+  for (const [key, item] of queueCollection.entries()) {
+    queueCollection.update(key, (draft: QueueInput) => {
+      draft.order = item.order + 1;
+    });
+  }
+  queueCollection.insert({ url, feedId, order: 0, addedAt: new Date() });
+}
+
+/** Add an episode to the back of the queue (play last). */
+export function enqueueLast(url: string, feedId: number): void {
+  const items = getQueueOrdered();
+  const nextOrder = items.length > 0 ? (items[items.length - 1]?.order ?? -1) + 1 : 0;
+  queueCollection.insert({ url, feedId, order: nextOrder, addedAt: new Date() });
+}
+
+/** Remove an episode from the queue and compact the order values. */
+export function dequeue(url: string): void {
+  const item = queueCollection.get(url);
+  if (!item) return;
+  const removedOrder = item.order;
+  queueCollection.delete(url);
+  // Compact: shift items after the removed one down by 1
+  for (const [key, q] of queueCollection.entries()) {
+    if (q.order > removedOrder) {
+      queueCollection.update(key, (draft: QueueInput) => {
+        draft.order = q.order - 1;
+      });
+    }
+  }
+}
+
+/**
+ * Reorder a queue item to a new position.
+ * Stub for future drag-to-reorder — not called from UI yet.
+ */
+export function reorderQueue(url: string, newOrder: number): void {
+  const item = queueCollection.get(url);
+  if (!item) return;
+  const oldOrder = item.order;
+  if (oldOrder === newOrder) return;
+
+  for (const [key, q] of queueCollection.entries()) {
+    if (q.url === url) continue;
+    if (oldOrder < newOrder && q.order > oldOrder && q.order <= newOrder) {
+      queueCollection.update(key, (draft: QueueInput) => {
+        draft.order = q.order - 1;
+      });
+    } else if (oldOrder > newOrder && q.order >= newOrder && q.order < oldOrder) {
+      queueCollection.update(key, (draft: QueueInput) => {
+        draft.order = q.order + 1;
+      });
+    }
+  }
+  queueCollection.update(url, (draft: QueueInput) => {
+    draft.order = newOrder;
+  });
 }

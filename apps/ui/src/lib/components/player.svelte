@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X } from "@lucide/svelte";
+  import { ListX } from "@lucide/svelte";
   import { Button, buttonVariants } from "@/components/ui/button";
   import { player } from "$lib/state/player.svelte";
   import {
@@ -22,7 +22,7 @@
     switch (event.key) {
       case "Escape":
         event.preventDefault();
-        player.close();
+        player.skipToNext();
         break;
       case " ": {
         const target = event.target as HTMLElement;
@@ -36,7 +36,7 @@
 />
 
 <div
-  class="fixed bottom-0 w-full flex items-center gap-3 p-2 bg-background border-t border-border z-10 transition-transform duration-200 px-8"
+  class="fixed bottom-14 md:bottom-0 w-full flex items-center gap-3 p-2 bg-background border-t border-border z-20 transition-transform duration-200 px-8"
   class:translate-y-full={!player.src}
 >
   {#if player.image}
@@ -54,10 +54,10 @@
       class="h-20 flex flex-col justify-center"
       bind:audio={player.audio}
       bind:mediaController={player.mediaController}
-      onplay={player.onplay}
-      onpause={player.onpause}
-      ontimeupdate={player.ontimeupdate}
-      onended={player.onended}
+      onplay={() => player.onplay()}
+      onpause={() => player.onpause()}
+      ontimeupdate={() => player.ontimeupdate()}
+      onended={() => player.onended()}
     >
       <div class="flex items-center gap-2 justify-center">
         <div class="flex items-center gap-4">
@@ -101,9 +101,9 @@
       class="absolute top-0 right-0"
       variant="ghost"
       size="icon-sm"
-      onclick={() => player.close()}
+      onclick={() => player.skipToNext()}
     >
-      <X />
+      <ListX />
     </Button>
   </div>
 </div>
