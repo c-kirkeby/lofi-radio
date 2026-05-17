@@ -1,87 +1,81 @@
-import pino from "pino";
+import type { RequestHandler } from "./$types";
 
-const logger = pino();
+const USER_AGENT = "LofiRadio/1.0";
 
-import type { RequestHandler } from "@sveltejs/kit";
+export const GET: RequestHandler = async ({ url, request, fetch }) => {
+  // Only serve requests that originate from this app.
+  const requestOrigin =
+    request.headers.get("origin") ??
+    (() => {
+      const referer = request.headers.get("referer");
+      try {
+        return referer ? new URL(referer).origin : null;
+      } catch {
+        return null;
+      }
+    })();
 
-export const GET: RequestHandler = async ({ url, request }) => {
+  if (requestOrigin !== url.origin) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
   const target = url.searchParams.get("url");
 
   if (!target) {
-    return new Response("Missing 'url' parameter", {
-      status: 400,
-    });
+    return new Response("Missing 'url' parameter", { status: 400 });
   }
 
-  let targetUrl;
-
+  let targetUrl: URL;
   try {
     targetUrl = new URL(target);
-  } catch (error) {
-    logger.error(error);
-    return new Response("Invalid URL");
+  } catch {
+    return new Response("Invalid URL", { status: 400 });
   }
 
-  // Forward all query params except 'url' to the target
-  for (const [key, value] of url.searchParams) {
-    if (key !== "url") {
-      targetUrl.searchParams.set(key, value);
-    }
+  if (targetUrl.protocol !== "http:" && targetUrl.protocol !== "https:") {
+    return new Response("Only http and https URLs are allowed", { status: 400 });
   }
 
-  const headers = new Headers(request.headers);
-  headers.delete("host");
-  headers.delete("sec-fetch-dest");
-  headers.delete("sec-fetch-mode");
-  headers.delete("sec-fetch-site");
-  headers.set(
-    "user-agent",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-  );
-  headers.set("accept", "*/*");
-  headers.set("accept-language", "en-US,en;q=0.9");
-  headers.set("referer", new URL(targetUrl).origin);
-  headers.set("connection", "keep-alive");
+  const { hostname } = targetUrl;
+  const isPrivateHost =
+    // Exact matches
+    hostname === "localhost" ||
+    hostname === "0.0.0.0" ||
+    hostname === "::1" ||
+    hostname === "metadata.amazonaws.com" ||
+    hostname === "metadata.google.internal" ||
+    // IPv4 ranges
+    hostname.startsWith("0.") ||
+    hostname.startsWith("10.") ||
+    hostname.startsWith("127.") ||
+    hostname.startsWith("169.254.") ||
+    hostname.startsWith("192.168.") ||
+    // IPv6 ranges
+    hostname.startsWith("fc00:") ||
+    hostname.startsWith("fd") ||
+    hostname.startsWith("ff") ||
+    // Ranges requiring regex
+    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname) ||
+    /^2(2[4-9]|3\d)\./.test(hostname);
 
-  const origin = request.headers.get("origin");
-  try {
-    logger.info(`Proxying request to ${targetUrl} from origin ${origin}`);
-    const response = await fetch(targetUrl, { headers });
-
-    const responseHeaders = new Headers(response.headers);
-
-    responseHeaders.delete("content-encoding");
-    responseHeaders.delete("content-length");
-    responseHeaders.delete("transfer-encoding");
-    responseHeaders.delete("access-control-allow-headers");
-    responseHeaders.delete("access-control-allow-origin");
-    responseHeaders.delete("access-control-allow-methods");
-    responseHeaders.delete("access-control-allow-credentials");
-    responseHeaders.delete("access-control-max-age");
-    responseHeaders.delete("access-control-expose-headers");
-    responseHeaders.set("access-control-allow-origin", origin ?? "*");
-    responseHeaders.set("access-control-expose-headers", "*");
-    responseHeaders.set("accept-ranges", "bytes");
-
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders,
-    });
-  } catch (error) {
-    logger.error(error);
+  if (isPrivateHost) {
+    return new Response("Forbidden", { status: 403 });
   }
-  return new Response("Generic error", { status: 500 });
-};
 
-export const OPTIONS: RequestHandler = ({ request }) => {
-  const origin = request.headers.get("origin");
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": origin ?? "*",
-      "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-      "Access-Control-Allow-Headers": "*",
-      "Access-Control-Max-Age": "86400",
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+
+  const response = await fetch(targetUrl.toString(), {
+    headers: { "User-Agent": USER_AGENT },
+    signal: controller.signal,
+    redirect: "error",
+  }).catch(() => null).finally(() => clearTimeout(timeout));
+
+  if (!response) return new Response("Upstream request failed", { status: 502 });
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-encoding");
+  headers.delete("content-length");
+  headers.delete("transfer-encoding");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 };

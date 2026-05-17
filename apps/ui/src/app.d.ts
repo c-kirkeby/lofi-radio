@@ -9,10 +9,6 @@ declare global {
     // interface Platform {}
   }
 
-  interface ImportMetaEnv {
-    readonly VITE_PODCAST_INDEX_KEY: string;
-    readonly VITE_PODCAST_INDEX_SECRET: string;
-  }
 }
 
-export {};
+export { };

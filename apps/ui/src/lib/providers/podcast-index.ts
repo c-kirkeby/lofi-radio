@@ -1,14 +1,5 @@
 import * as v from "valibot";
-import { createFetch, createSchema, type CreateFetchOption } from "@better-fetch/fetch";
-import { sha1 } from "@/sha1";
-import pino from "pino";
-
-const logger = pino();
-
-const settings = {
-  baseUrl: "https://api.podcastindex.org/api/1.0",
-  userAgent: "LofiRadio/1.0",
-} as const;
+import { createFetch, createSchema } from "@better-fetch/fetch";
 
 const schema = createSchema({
   "podcasts/byfeedid": {
@@ -160,32 +151,10 @@ const schema = createSchema({
   },
 });
 
-async function createAuthHeaders() {
-  const authTime = Math.floor(Date.now() / 1000).toString();
-  return {
-    "Content-Type": "application/json",
-    "User-Agent": settings.userAgent,
-    "X-Auth-Key": import.meta.env.VITE_PODCAST_INDEX_KEY,
-    "X-Auth-Date": authTime,
-    Authorization: await sha1(
-      import.meta.env.VITE_PODCAST_INDEX_KEY + import.meta.env.VITE_PODCAST_INDEX_SECRET + authTime,
-    ),
-  };
-}
-
 export const podcastIndexClient = createFetch({
-  baseURL: `/api/proxy?url=${encodeURIComponent(settings.baseUrl)}`,
-  onRequest: async (context) => {
-    return {
-      ...context,
-      headers: {
-        ...context.headers,
-        ...(await createAuthHeaders()),
-      },
-    };
-  },
+  baseURL: "/api/podcast-index",
   schema,
   onError: (error) => {
-    logger.error(error);
+    console.error("[PodcastIndex] request error:", error);
   },
 });
