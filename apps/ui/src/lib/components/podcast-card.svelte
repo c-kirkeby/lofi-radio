@@ -14,9 +14,9 @@
   >
     <Card.Content class="px-0" style="border-radius: inherit">
       <AspectRatio ratio={1 / 1}>
-        {#if podcast.feedId}
+        {#if podcast.image}
           <img
-            src={`/image/${podcast.feedId}.png`}
+            src={podcast.image}
             alt={podcast.title}
             class="size-full object-cover"
             style:view-transition-name={`podcast-${podcast.feedId}`}

@@ -13,7 +13,6 @@ import {
 import { QueryClient } from "@tanstack/query-core";
 import * as v from "valibot";
 import { parseFeedUrl } from "@/feed/parser";
-import { cacheImage, resizeImage } from "@/caches/image";
 import { podcastIndexClient } from "@/providers/podcast-index";
 
 const queryClient = new QueryClient();
@@ -30,7 +29,6 @@ const persistence = createBrowserWASQLitePersistence({
   database,
   coordinator,
 });
-
 
 const PodcastSchema = v.object({
   feedId: v.number(),
@@ -84,39 +82,15 @@ export const podcastsCollection = createCollection(
     defaultIndexType: BasicIndex,
     autoIndex: "eager",
     ...queryCollectionOptions({
-      queryKey: opts => {
+      queryKey: (opts) => {
         if (opts.where) {
           return ["podcasts", JSON.stringify(opts.where)];
         }
         return ["podcasts"];
       },
-      onInsert: async ({ transaction }) => {
-        for (const mutation of transaction.mutations) {
-          const podcast = mutation.modified as PodcastInput;
-          if (podcast.subscribed && podcast.image) {
-            try {
-              const image = await resizeImage(podcast.image);
-              await cacheImage(image, String(podcast.feedId), "image");
-            } catch {
-              // best-effort
-            }
-          }
-        }
-      },
-      onUpdate: async ({ transaction }) => {
-        for (const mutation of transaction.mutations) {
-          const podcast = mutation.modified as PodcastInput;
-          if (podcast.subscribed && podcast.image) {
-            try {
-              const image = await resizeImage(podcast.image);
-              await cacheImage(image, String(podcast.feedId), "image");
-            } catch {
-              // best-effort
-            }
-          }
-        }
-      },
-      onDelete: async () => { },
+      onInsert: async () => {},
+      onUpdate: async () => {},
+      onDelete: async () => {},
       queryClient,
       syncMode: "on-demand",
       getKey: (podcast) => podcast.feedId,
@@ -204,11 +178,11 @@ export const episodesCollection = createCollection(
     defaultIndexType: BasicIndex,
     autoIndex: "eager",
     ...queryCollectionOptions({
-      queryKey: opts => {
+      queryKey: (opts) => {
         if (opts.where) {
-          return ['episodes', JSON.stringify(opts.where)];
+          return ["episodes", JSON.stringify(opts.where)];
         }
-        return ['episodes'];
+        return ["episodes"];
       },
       queryClient,
       syncMode: "on-demand",
@@ -245,10 +219,6 @@ async function getEpisodes(filters: Array<SimpleComparison>): Promise<EpisodeInp
     pairs.map(async ({ feedId, url }) => {
       try {
         const feed = await parseFeedUrl(url);
-        if (feed.image) {
-          const image = await resizeImage(feed.image);
-          await cacheImage(image, String(feedId), "image");
-        }
         const { entries } = feed;
         if (!entries?.length) return [];
 

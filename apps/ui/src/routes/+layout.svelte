@@ -8,8 +8,19 @@
   import SidebarTrigger from "$lib/components/ui/sidebar/sidebar-trigger.svelte";
   import { onNavigate } from "$app/navigation";
   import AppSidebar from "@/components/app-sidebar.svelte";
+  import { onMount } from "svelte";
+  import { pwaInfo } from "virtual:pwa-info";
 
   let { children } = $props();
+
+  let webManifestLink = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : "");
+
+  onMount(async () => {
+    if (pwaInfo) {
+      const { registerSW } = await import("virtual:pwa-register");
+      registerSW({ immediate: true });
+    }
+  });
 
   onNavigate((navigation) => {
     if (!document.startViewTransition) return;
@@ -22,6 +33,10 @@
     });
   });
 </script>
+
+<svelte:head>
+  {@html webManifestLink}
+</svelte:head>
 
 <ModeWatcher />
 

@@ -142,11 +142,11 @@
     {#if podcast.image}
       <div class="relative shrink-0">
         <div
-          style="--background-image: url({`/image/${podcast.feedId}.png`})"
+          style="--background-image: url({podcast.image})"
           class="bg-(image:--background-image) absolute bg-cover -z-10 inset-1 scale-200 rotate-45 blur-3xl md:hidden"
         ></div>
         <img
-          src={`/image/${podcast.feedId}.png`}
+          src={podcast.image}
           alt={podcast.title}
           class="size-32 rounded-xl object-cover md:size-48"
           style:view-transition-name={`podcast-${podcast.feedId}`}

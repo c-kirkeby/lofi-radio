@@ -39,7 +39,9 @@
     "@sveltejs/kit": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",
     "@tailwindcss/vite": "catalog:",
-    "bits-ui": "^2.18.1",
+    "@vite-pwa/assets-generator": "catalog:",
+    "@vite-pwa/sveltekit": "catalog:",
+    "bits-ui": "catalog:",
     "clsx": "catalog:",
     "shadcn-svelte": "catalog:",
     "svelte": "catalog:",
@@ -50,7 +52,9 @@
     "tw-animate-css": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
+    "vite-plugin-pwa": "catalog:",
     "vite-plus": "catalog:",
+    "workbox-window": "catalog:",
     "wrangler": "catalog:"
   }
 }
