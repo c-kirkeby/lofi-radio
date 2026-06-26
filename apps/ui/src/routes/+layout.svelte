@@ -4,7 +4,10 @@
   import Player from "$lib/components/player.svelte";
   import Search from "$lib/components/search.svelte";
   import Separator from "@/components/ui/separator/separator.svelte";
+  import * as Sidebar from "$lib/components/ui/sidebar";
+  import SidebarTrigger from "$lib/components/ui/sidebar/sidebar-trigger.svelte";
   import { onNavigate } from "$app/navigation";
+  import AppSidebar from "@/components/app-sidebar.svelte";
 
   let { children } = $props();
 
@@ -22,12 +25,22 @@
 
 <ModeWatcher />
 
-<div class="min-h-screen p-6 pb-24 mx-auto container max-w-8xl">
-  <div class="flex justify-end">
-    <Search />
-  </div>
-  <Separator class="my-4" />
-  {@render children()}
-</div>
+<Sidebar.Provider>
+  <AppSidebar collapsible="icon" />
+  <Sidebar.Inset>
+    <header class="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <div class="flex flex-1 items-center gap-2">
+        <SidebarTrigger class="-ml-1" />
+        <Separator orientation="vertical" class="mx-2 h-4" />
+      </div>
+      <div class="ms-auto">
+        <Search />
+      </div>
+    </header>
+    <main class="flex flex-1 flex-col gap-4 p-6 pb-24">
+      {@render children()}
+    </main>
+  </Sidebar.Inset>
+</Sidebar.Provider>
 
 <Player />
