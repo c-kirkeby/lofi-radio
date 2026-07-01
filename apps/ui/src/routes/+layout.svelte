@@ -71,7 +71,7 @@
         <Search />
       </div>
     </header>
-    <main class="flex flex-1 flex-col gap-4 p-6 pb-24">
+    <main class="flex flex-1 flex-col gap-4 p-6 pb-24 container mx-auto">
       {@render children()}
     </main>
   </Sidebar.Inset>
