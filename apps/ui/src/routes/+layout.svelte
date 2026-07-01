@@ -10,6 +10,8 @@
   import AppSidebar from "@/components/app-sidebar.svelte";
   import { onMount } from "svelte";
   import { pwaInfo } from "virtual:pwa-info";
+  import { toast } from "svelte-sonner";
+  import { Toaster } from "$lib/components/ui/sonner";
 
   let { children } = $props();
 
@@ -18,7 +20,23 @@
   onMount(async () => {
     if (pwaInfo) {
       const { registerSW } = await import("virtual:pwa-register");
-      registerSW({ immediate: true });
+      const updateSW = registerSW({
+        immediate: true,
+        onNeedRefresh() {
+          toast("Update available", {
+            description: "A new version of the app is ready to install.",
+            duration: Infinity,
+            action: {
+              label: "Update",
+              onClick: () => updateSW(true),
+            },
+            cancel: {
+              label: "Dismiss",
+              onClick: () => {},
+            },
+          });
+        },
+      });
     }
   });
 
@@ -39,6 +57,7 @@
 </svelte:head>
 
 <ModeWatcher />
+<Toaster />
 
 <Sidebar.Provider>
   <AppSidebar collapsible="icon" />

@@ -57,6 +57,7 @@ catalog:
   vitest: npm:@voidzero-dev/vite-plus-test@latest
   wrangler: ^4.104.0
   workbox-window: ^7.4.1
+  svelte-sonner: ^1.1.1
 
 catalogMode: prefer
 onlyBuiltDependencies:

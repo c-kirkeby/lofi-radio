@@ -20,7 +20,9 @@
         <Sidebar.MenuButton size="lg">
           {#snippet child({ props })}
             <a href="/" {...props}>
-              <div class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+              <div
+                class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
+              >
                 <Mic class="size-4" />
               </div>
               <span class="font-semibold">Lofi Radio</span>
