@@ -52,7 +52,7 @@
     "tailwindcss": "catalog:",
     "tw-animate-css": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:",
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vite-plugin-pwa": "catalog:",
     "vite-plus": "catalog:",
     "workbox-window": "catalog:",
