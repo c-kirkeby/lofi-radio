@@ -16,6 +16,9 @@ node_modules
 dist
 dist-ssr
 *.local
+.svelte-kit
+.cloudflare
+.pnpm-debug.log
 
 # Editor directories and files
 .vscode/*
