@@ -11,13 +11,16 @@ export const GET: RequestHandler = async ({ params, request, fetch }) => {
   const url = `${BASE_URL}/${path}${search}`;
 
   const now = Math.floor(Date.now() / 1000).toString();
+  console.debug(
+    `[PodcastIndex Proxy] are keys configured - key: ${!!PODCAST_INDEX_KEY.length} ${PODCAST_INDEX_SECRET.length}`,
+  );
   const hash = await sha1(PODCAST_INDEX_KEY + PODCAST_INDEX_SECRET + now);
 
   const newRequest = new Request(url, {
     method: "GET",
     headers: {
       "User-Agent": USER_AGENT,
-      "Authorization": hash,
+      Authorization: hash,
       "X-Auth-Key": PODCAST_INDEX_KEY,
       "X-Auth-Date": now,
     },
@@ -32,5 +35,9 @@ export const GET: RequestHandler = async ({ params, request, fetch }) => {
   headers.delete("content-encoding");
   headers.delete("content-length");
   headers.delete("transfer-encoding");
-  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
-}
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+};
