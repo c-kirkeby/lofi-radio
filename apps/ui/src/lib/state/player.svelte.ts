@@ -1,3 +1,5 @@
+import { progressCollection } from "@/db/collections";
+
 export interface PlayerEpisode {
   src: string;
   title: string;
@@ -33,10 +35,26 @@ export class Player {
 
     if (this.audio) {
       this.audio.src = episode.src;
+
+      this.resume(episode);
+
       void this.audio.play();
     }
 
     this.#setupMediaSession(episode);
+  }
+
+  resume(episode: PlayerEpisode) {
+    const progress = progressCollection.get(episode.src);
+    if (progress && !progress.completed && this.audio) {
+      const audio = this.audio;
+      const resumePosition = progress.position;
+      const onLoadedMetadata = () => {
+        audio.currentTime = resumePosition;
+        audio.removeEventListener("loadedmetadata", onLoadedMetadata);
+      };
+      audio.addEventListener("loadedmetadata", onLoadedMetadata);
+    }
   }
 
   playpause() {
@@ -63,31 +81,57 @@ export class Player {
     }
   }
 
-  onplay() {
+  onplay = () => {
     if ("mediaSession" in navigator) {
       navigator.mediaSession.playbackState = "playing";
     }
-  }
+  };
 
-  ontimeupdate() {
-    if (!this.audio || !("mediaSession" in navigator)) return;
+  ontimeupdate = () => {
+    if (!this.audio) return;
 
-    navigator.mediaSession.setPositionState({
-      duration: this.audio.duration,
-      position: this.audio.currentTime,
-    });
-  }
+    if (this.src) {
+      const src = this.src;
+      const position = this.audio.currentTime;
+      if (progressCollection.has(src)) {
+        progressCollection.update(src, (draft) => {
+          draft.position = position;
+          draft.completed = false;
+        });
+      } else {
+        progressCollection.insert({ url: src, position, completed: false });
+      }
+    }
 
-  onpause() {
+    if ("mediaSession" in navigator && Number.isFinite(this.audio.duration)) {
+      navigator.mediaSession.setPositionState({
+        duration: this.audio.duration,
+        position: this.audio.currentTime,
+      });
+    }
+  };
+
+  onpause = () => {
     if ("mediaSession" in navigator) {
       navigator.mediaSession.playbackState = "paused";
     }
-  }
+  };
 
-  /* Not currently working; throws an error */
-  onended() {
+  onended = () => {
+    if (this.src) {
+      const src = this.src;
+      const position = this.audio?.currentTime ?? 0;
+      if (progressCollection.has(src)) {
+        progressCollection.update(src, (draft) => {
+          draft.completed = true;
+        });
+      } else {
+        progressCollection.insert({ url: src, position, completed: true });
+      }
+    }
+
     this.close();
-  }
+  };
 
   #setupMediaSession(episode: PlayerEpisode) {
     if (!("mediaSession" in navigator)) return;
