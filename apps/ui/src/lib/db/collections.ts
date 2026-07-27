@@ -88,9 +88,9 @@ export const podcastsCollection = createCollection(
         }
         return ["podcasts"];
       },
-      onInsert: async () => {},
-      onUpdate: async () => {},
-      onDelete: async () => {},
+      onInsert: async () => { },
+      onUpdate: async () => { },
+      onDelete: async () => { },
       queryClient,
       syncMode: "on-demand",
       getKey: (podcast) => podcast.feedId,
@@ -249,3 +249,22 @@ async function getEpisodes(filters: Array<SimpleComparison>): Promise<EpisodeInp
 
   return results.flat();
 }
+
+const ProgressSchema = v.object({
+  url: v.string(),
+  position: v.number(),
+  completed: v.boolean(),
+});
+
+export type ProgressInput = v.InferInput<typeof ProgressSchema>;
+
+export const progressCollection = createCollection(
+  persistedCollectionOptions<ProgressInput, string>({
+    id: "progress",
+    persistence,
+    schemaVersion: 1,
+    defaultIndexType: BasicIndex,
+    autoIndex: "eager",
+    getKey: (p) => p.url,
+  }),
+);
