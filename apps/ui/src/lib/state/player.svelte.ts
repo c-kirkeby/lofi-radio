@@ -21,6 +21,8 @@ export class Player {
   /** Reference to the <media-controller> element, bound by the Player component. */
   mediaController = $state<HTMLElement | null>(null);
 
+  #resumePosition: number | null = null;
+
   /**
    * Load and immediately play an episode.
    * Sets metadata fields and imperatively updates the audio element src so
@@ -32,6 +34,7 @@ export class Player {
     this.image = episode.image;
     this.id = episode.id;
     this.src = episode.src;
+    this.#resumePosition = null;
 
     if (this.audio) {
       this.audio.src = episode.src;
@@ -48,9 +51,12 @@ export class Player {
     const progress = progressCollection.get(episode.src);
     if (progress && !progress.completed && this.audio) {
       const audio = this.audio;
-      const resumePosition = progress.position;
+      this.#resumePosition = progress.position;
       const onLoadedMetadata = () => {
-        audio.currentTime = resumePosition;
+        if (this.#resumePosition) {
+          audio.currentTime = this.#resumePosition;
+          this.#resumePosition = null;
+        }
         audio.removeEventListener("loadedmetadata", onLoadedMetadata);
       };
       audio.addEventListener("loadedmetadata", onLoadedMetadata);
@@ -90,7 +96,7 @@ export class Player {
   ontimeupdate = () => {
     if (!this.audio) return;
 
-    if (this.src) {
+    if (this.src && !this.#resumePosition) {
       const src = this.src;
       const position = this.audio.currentTime;
       if (progressCollection.has(src)) {

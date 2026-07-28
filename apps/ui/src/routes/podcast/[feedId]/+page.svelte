@@ -17,7 +17,11 @@
   import { Play, Mic, Link, Plus, CircleCheck } from "@lucide/svelte";
   import ItemSeparator from "@/components/ui/item/item-separator.svelte";
   import { eq, useLiveQuery } from "@tanstack/svelte-db";
-  import { podcastsCollection, episodesCollection } from "@/db/collections";
+  import {
+    podcastsCollection,
+    episodesCollection,
+    progressCollection,
+  } from "@/db/collections";
   import { WindowVirtualizer } from "virtua/svelte";
   import { formatDate } from "@/dates";
 
@@ -37,14 +41,19 @@
   const episodesQuery = useLiveQuery((q) =>
     q
       .from({ episodes: episodesCollection })
+      .leftJoin({ progress: progressCollection }, ({ episodes, progress }) =>
+        eq(progress.url, episodes.url),
+      )
       .where(({ episodes }) => eq(episodes.feedId, feedId))
       .orderBy(({ episodes }) => episodes.published, "desc")
-      .select(({ episodes }) => ({
+      .select(({ episodes, progress }) => ({
         title: episodes.title,
         url: episodes.url,
         published: episodes.published,
         duration: episodes.duration,
         image: episodes.image,
+        position: progress?.position,
+        completed: progress?.completed,
       })),
   );
 
@@ -235,7 +244,11 @@
     <WindowVirtualizer data={episodesQuery.data}>
       {#snippet children(entry, index)}
         {@const duration = parseDuration(entry.duration)}
-        <Item>
+        {@const completed = entry.completed === true}
+        {@const remaining = !completed
+          ? parseDuration((entry.duration ?? 0) - (entry.position ?? 0))
+          : null}
+        <Item class={completed ? "opacity-50" : ""}>
           <ItemContent class="flex flex-col md:grid md:grid-cols-5">
             <ItemDescription class="md:hidden">
               {formatDate(entry.published)}
@@ -247,7 +260,7 @@
               {formatDate(entry.published)}
             </ItemDescription>
             <ItemDescription>
-              {duration}
+              {remaining ?? duration}
             </ItemDescription>
           </ItemContent>
           <ItemActions>
