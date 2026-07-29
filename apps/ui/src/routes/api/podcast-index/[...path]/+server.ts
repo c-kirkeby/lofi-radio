@@ -1,5 +1,5 @@
 import type { RequestHandler } from "./$types";
-import { PODCAST_INDEX_KEY, PODCAST_INDEX_SECRET } from "$env/static/private";
+import { PODCAST_INDEX_KEY, PODCAST_INDEX_SECRET } from "$app/env/private";
 import { sha1 } from "@/server/sha1";
 
 const BASE_URL = "https://api.podcastindex.org/api/1.0";
