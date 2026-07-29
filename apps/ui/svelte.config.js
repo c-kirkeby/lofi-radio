@@ -12,6 +12,7 @@ const config = {
   kit: {
     experimental: {
       remoteFunctions: true,
+      explicitEnvironmentVariables: true,
     },
     serviceWorker: {
       register: false,
